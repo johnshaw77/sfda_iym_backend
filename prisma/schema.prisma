@@ -1,0 +1,149 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(uuid())
+  username  String   @unique
+  email     String   @unique
+  password  String
+  role      String   @default("USER")
+  avatar    String?
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // RBAC 關聯
+  userRoles UserRole[]
+
+  // 專案關聯
+  createdProjects Project[] @relation("CreatedProjects")
+  updatedProjects Project[] @relation("UpdatedProjects")
+
+  // 工作流程關聯
+  createdWorkflows Workflow[] @relation("CreatedWorkflows")
+  updatedWorkflows Workflow[] @relation("UpdatedWorkflows")
+
+  @@index([email])
+  @@map("users")
+}
+
+model Permission {
+  id          String   @id @default(uuid())
+  name        String   @unique // 例如：create:user, read:user
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // RBAC 關聯
+  rolePermissions RolePermission[]
+
+  @@map("permissions")
+}
+
+model Role {
+  id          String   @id @default(uuid())
+  name        String   @unique // 例如：admin, user, editor
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // RBAC 關聯
+  userRoles       UserRole[]
+  rolePermissions RolePermission[]
+
+  @@map("roles")
+}
+
+model UserRole {
+  id        String   @id @default(uuid())
+  userId    String
+  roleId    String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // 關聯
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role Role @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, roleId])
+  @@map("user_roles")
+}
+
+model RolePermission {
+  id           String   @id @default(uuid())
+  roleId       String
+  permissionId String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // 關聯
+  role       Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@unique([roleId, permissionId])
+  @@map("role_permissions")
+}
+
+model Project {
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  status      String   @default("draft") // draft, in_progress, completed, cancelled
+  createdBy   String
+  updatedBy   String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // 關聯到用戶表
+  creator User @relation("CreatedProjects", fields: [createdBy], references: [id])
+  updater User @relation("UpdatedProjects", fields: [updatedBy], references: [id])
+
+  @@map("projects")
+}
+
+model Workflow {
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  status      String   @default("draft") // draft, in_progress, completed, cancelled
+  createdBy   String
+  updatedBy   String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // 關聯
+  files   File[]
+  creator User   @relation("CreatedWorkflows", fields: [createdBy], references: [id])
+  updater User   @relation("UpdatedWorkflows", fields: [updatedBy], references: [id])
+
+  @@map("workflows")
+}
+
+model File {
+  id            String   @id @default(uuid())
+  fileName      String // 系統生成的檔案名
+  originalname  String // 原始檔案名
+  fileUrl       String // 檔案路徑
+  fileSize      Int // 檔案大小（bytes）
+  fileType      String // 檔案類型
+  thumbnailPath String? // 縮圖路徑（如果有）
+  workflowId    String? // 關聯的工作流程 ID
+  status        String   @default("pending") // pending, processing, completed, error
+  metadata      String? // 檔案元數據（JSON 字串）
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // 關聯
+  workflow Workflow? @relation(fields: [workflowId], references: [id])
+
+  @@map("files")
+}
