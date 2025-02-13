@@ -33,12 +33,32 @@ exports.register = async (req, res) => {
         username,
         email,
         password: await bcrypt.hash(password, 10),
+        role: "READER", // 設置預設角色
+        userRoles: {
+          create: {
+            role: {
+              connect: {
+                name: "READER",
+              },
+            },
+          },
+        },
       },
       select: {
         id: true,
         username: true,
         email: true,
         role: true,
+        userRoles: {
+          select: {
+            role: {
+              select: {
+                name: true,
+                description: true,
+              },
+            },
+          },
+        },
       },
     });
 
@@ -69,6 +89,28 @@ exports.login = async (req, res) => {
     // 查找用戶
     const user = await prisma.user.findUnique({
       where: { email },
+      include: {
+        userRoles: {
+          select: {
+            role: {
+              select: {
+                name: true,
+                description: true,
+                rolePermissions: {
+                  select: {
+                    permission: {
+                      select: {
+                        name: true,
+                        description: true,
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
     });
 
     if (!user || !(await bcrypt.compare(password, user.password))) {
@@ -83,22 +125,45 @@ exports.login = async (req, res) => {
       });
     }
 
-    // 生成 JWT，根據 remember 參數設置過期時間
+    // 設置過期時間
+    let expiresIn = process.env.JWT_EXPIRES_IN;
+    if (remember) {
+      // 如果選擇記住我，則使用更長的過期時間
+      expiresIn = process.env.JWT_REMEMBER_EXPIRES_IN || "7d";
+    }
+
+    // 生成 JWT
     const token = jwt.sign(
-      { userId: user.id, role: user.role },
+      {
+        userId: user.id,
+        role: user.role,
+        roles: user.userRoles.map((ur) => ur.role.name),
+      },
       process.env.JWT_SECRET,
-      { expiresIn: remember ? "7d" : process.env.JWT_EXPIRES_IN }
+      { expiresIn }
     );
+
+    // 重組用戶數據
+    const userData = {
+      id: user.id,
+      username: user.username,
+      email: user.email,
+      role: user.role,
+      roles: user.userRoles.map((ur) => ({
+        name: ur.role.name,
+        description: ur.role.description,
+        permissions: ur.role.rolePermissions.map((rp) => ({
+          name: rp.permission.name,
+          description: rp.permission.description,
+        })),
+      })),
+    };
 
     res.json({
       message: "登入成功",
       token,
-      user: {
-        id: user.id,
-        username: user.username,
-        email: user.email,
-        role: user.role,
-      },
+      user: userData,
+      expiresIn,
     });
   } catch (error) {
     console.error("登入錯誤:", error);
@@ -118,10 +183,44 @@ exports.getCurrentUser = async (req, res) => {
         role: true,
         avatar: true,
         createdAt: true,
+        userRoles: {
+          select: {
+            role: {
+              select: {
+                name: true,
+                description: true,
+                rolePermissions: {
+                  select: {
+                    permission: {
+                      select: {
+                        name: true,
+                        description: true,
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
       },
     });
 
-    res.json(user);
+    // 重組權限數據
+    const userWithPermissions = {
+      ...user,
+      roles: user.userRoles.map((ur) => ({
+        name: ur.role.name,
+        description: ur.role.description,
+        permissions: ur.role.rolePermissions.map((rp) => ({
+          name: rp.permission.name,
+          description: rp.permission.description,
+        })),
+      })),
+    };
+    delete userWithPermissions.userRoles;
+
+    res.json(userWithPermissions);
   } catch (error) {
     console.error("獲取用戶信息錯誤:", error);
     res.status(500).json({ message: "伺服器錯誤" });

@@ -21,6 +21,7 @@ exports.createProject = async (req, res) => {
             id: true,
             username: true,
             email: true,
+            avatar: true,
           },
         },
         updater: {
@@ -28,6 +29,7 @@ exports.createProject = async (req, res) => {
             id: true,
             username: true,
             email: true,
+            avatar: true,
           },
         },
       },
@@ -46,23 +48,50 @@ exports.createProject = async (req, res) => {
 // 獲取所有專案
 exports.getAllProjects = async (req, res) => {
   try {
-    const projects = await prisma.project.findMany({
-      include: {
-        creator: {
-          select: {
-            id: true,
-            username: true,
-            email: true,
-          },
-        },
-        updater: {
-          select: {
-            id: true,
-            username: true,
-            email: true,
-          },
+    const { includeWorkflows } = req.query;
+    const include = {
+      creator: {
+        select: {
+          id: true,
+          username: true,
+          email: true,
+          avatar: true,
         },
       },
+      updater: {
+        select: {
+          id: true,
+          username: true,
+          email: true,
+          avatar: true,
+        },
+      },
+    };
+
+    // 如果需要包含工作流程實例資訊
+    if (includeWorkflows === "true") {
+      include.workflowInstances = {
+        include: {
+          template: {
+            select: {
+              id: true,
+              templateName: true,
+              templateCategory: true,
+            },
+          },
+          creator: {
+            select: {
+              id: true,
+              username: true,
+              avatar: true,
+            },
+          },
+        },
+      };
+    }
+
+    const projects = await prisma.project.findMany({
+      include,
       orderBy: {
         updatedAt: "desc",
       },
@@ -79,25 +108,60 @@ exports.getAllProjects = async (req, res) => {
 exports.getProjectById = async (req, res) => {
   try {
     const { id } = req.params;
+    const { includeWorkflows } = req.query;
+
+    const include = {
+      creator: {
+        select: {
+          id: true,
+          username: true,
+          email: true,
+          avatar: true,
+        },
+      },
+      updater: {
+        select: {
+          id: true,
+          username: true,
+          email: true,
+          avatar: true,
+        },
+      },
+    };
+
+    // 如果需要包含工作流程實例資訊
+    if (includeWorkflows === "true") {
+      include.workflowInstances = {
+        include: {
+          template: {
+            select: {
+              id: true,
+              templateName: true,
+              templateCategory: true,
+            },
+          },
+          creator: {
+            select: {
+              id: true,
+              username: true,
+              avatar: true,
+            },
+          },
+          nodeInstances: {
+            select: {
+              id: true,
+              status: true,
+              startTime: true,
+              endTime: true,
+            },
+          },
+        },
+      };
+    }
 
     const project = await prisma.project.findUnique({
       where: { id },
-      include: {
-        creator: {
-          select: {
-            id: true,
-            username: true,
-            email: true,
-          },
-        },
-        updater: {
-          select: {
-            id: true,
-            username: true,
-            email: true,
-          },
-        },
-      },
+      include,
     });
 
     if (!project) {
@@ -118,6 +182,15 @@ exports.updateProject = async (req, res) => {
     const { name, description, status } = req.body;
     const userId = req.user.id;
 
+    // 驗證狀態值
+    const validStatuses = ["draft", "active", "completed"];
+    if (status && !validStatuses.includes(status)) {
+      return res.status(400).json({
+        message: "無效的狀態值",
+        validStatuses,
+      });
+    }
+
     const project = await prisma.project.update({
       where: { id },
       data: {
@@ -132,6 +205,7 @@ exports.updateProject = async (req, res) => {
             id: true,
             username: true,
             email: true,
+            avatar: true,
           },
         },
         updater: {
@@ -139,6 +213,7 @@ exports.updateProject = async (req, res) => {
             id: true,
             username: true,
             email: true,
+            avatar: true,
           },
         },
       },
@@ -162,15 +237,33 @@ exports.deleteProject = async (req, res) => {
   try {
     const { id } = req.params;
 
+    // 檢查是否存在相關的工作流程實例
+    const project = await prisma.project.findUnique({
+      where: { id },
+      include: {
+        workflowInstances: {
+          select: { id: true },
+        },
+      },
+    });
+
+    if (!project) {
+      return res.status(404).json({ message: "專案不存在" });
+    }
+
+    if (project.workflowInstances.length > 0) {
+      return res.status(400).json({
+        message: "無法刪除專案，請先刪除相關的工作流程實例",
+        workflowInstanceCount: project.workflowInstances.length,
+      });
+    }
+
     await prisma.project.delete({
       where: { id },
     });
 
     res.json({ message: "專案刪除成功" });
   } catch (error) {
-    if (error.code === "P2025") {
-      return res.status(404).json({ message: "專案不存在" });
-    }
     console.error("刪除專案錯誤:", error);
     res.status(500).json({ message: "伺服器錯誤" });
   }

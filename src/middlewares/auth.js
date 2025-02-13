@@ -90,24 +90,38 @@ exports.authorizeAdmin = async (req, res, next) => {
 /**
  * 權限驗證中間件生成器
  * @param {string|string[]} requiredPermissions - 需要的權限
+ * @param {Object} options - 選項
+ * @param {boolean} options.requireAll - 是否需要具備所有權限，預設為 true
+ * @param {boolean} options.allowAdmin - 是否允許管理員繞過權限檢查，預設為 true
  */
-exports.authorize = (requiredPermissions) => {
+exports.authorize = (requiredPermissions, options = {}) => {
+  const { requireAll = true, allowAdmin = true } = options;
+
   return async (req, res, next) => {
     try {
       const userPermissions = req.userPermissions;
+      const isAdmin = req.user.userRoles.some((ur) => ur.role.name === "ADMIN");
+
+      // 如果是管理員且允許管理員繞過權限檢查
+      if (allowAdmin && isAdmin) {
+        return next();
+      }
 
       // 轉換為陣列
       const required = Array.isArray(requiredPermissions)
         ? requiredPermissions
         : [requiredPermissions];
 
-      // 檢查是否具有所有需要的權限
-      const hasAllPermissions = required.every((permission) =>
-        userPermissions.includes(permission)
-      );
+      // 根據 requireAll 選項檢查權限
+      const hasPermission = requireAll
+        ? required.every((permission) => userPermissions.includes(permission))
+        : required.some((permission) => userPermissions.includes(permission));
 
-      if (!hasAllPermissions) {
-        throw new AppError("權限不足", 403);
+      if (!hasPermission) {
+        throw new AppError(
+          requireAll ? "需要具備所有指定權限" : "需要具備至少一個指定權限",
+          403
+        );
       }
 
       next();
@@ -118,17 +132,23 @@ exports.authorize = (requiredPermissions) => {
 };
 
 /**
- * 資源所有者驗證中間件
+ * 資源所有者或管理員驗證中間件
  * @param {string} paramName - URL 參數名稱，用於獲取資源 ID
  * @param {string} model - Prisma 模型名稱
+ * @param {Object} options - 選項
+ * @param {boolean} options.allowAdmin - 是否允許管理員訪問，預設為 true
+ * @param {string} options.userField - 用戶 ID 欄位名稱，預設為 'createdBy'
  */
-exports.authorizeOwner = (paramName, model) => {
+exports.authorizeOwnerOrAdmin = (paramName, model, options = {}) => {
+  const { allowAdmin = true, userField = "createdBy" } = options;
+
   return async (req, res, next) => {
     try {
       const resourceId = req.params[paramName];
       const userId = req.user.id;
+      const isAdmin = req.user.userRoles.some((ur) => ur.role.name === "ADMIN");
 
-      // 檢查資源是否存在且屬於當前用戶
+      // 檢查資源是否存在
       const resource = await prisma[model].findUnique({
         where: { id: resourceId },
       });
@@ -137,8 +157,53 @@ exports.authorizeOwner = (paramName, model) => {
         throw new AppError("資源不存在", 404);
       }
 
-      if (resource.createdBy !== userId) {
+      // 如果是管理員且允許管理員訪問
+      if (allowAdmin && isAdmin) {
+        return next();
+      }
+
+      // 檢查資源是否屬於當前用戶
+      if (resource[userField] !== userId) {
         throw new AppError("無權訪問此資源", 403);
+      }
+
+      // 將資源添加到請求對象中
+      req.resource = resource;
+      next();
+    } catch (error) {
+      next(error);
+    }
+  };
+};
+
+/**
+ * 角色驗證中間件生成器
+ * @param {string|string[]} requiredRoles - 需要的角色
+ * @param {Object} options - 選項
+ * @param {boolean} options.requireAll - 是否需要具備所有角色，預設為 false
+ */
+exports.authorizeRoles = (requiredRoles, options = {}) => {
+  const { requireAll = false } = options;
+
+  return async (req, res, next) => {
+    try {
+      const userRoles = req.user.userRoles.map((ur) => ur.role.name);
+
+      // 轉換為陣列
+      const required = Array.isArray(requiredRoles)
+        ? requiredRoles
+        : [requiredRoles];
+
+      // 根據 requireAll 選項檢查角色
+      const hasRole = requireAll
+        ? required.every((role) => userRoles.includes(role))
+        : required.some((role) => userRoles.includes(role));
+
+      if (!hasRole) {
+        throw new AppError(
+          requireAll ? "需要具備所有指定角色" : "需要具備至少一個指定角色",
+          403
+        );
       }
 
       next();
