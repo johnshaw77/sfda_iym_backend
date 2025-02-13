@@ -4,7 +4,7 @@ const authController = require("../controllers/authController");
 const { authenticateToken } = require("../middlewares/auth");
 const {
   registerValidation,
-  loginValidation,
+  loginSchema,
   updateUserValidation,
   validate,
 } = require("../middlewares/validator");
@@ -106,7 +106,7 @@ const { uploadAvatar, handleUploadError } = require("../middlewares/upload");
  *       409:
  *         description: 用戶名或電子郵件已存在
  */
-router.post("/register", registerValidation, validate, authController.register);
+router.post("/register", registerValidation, authController.register);
 
 /**
  * @swagger
@@ -151,7 +151,7 @@ router.post("/register", registerValidation, validate, authController.register);
  *       403:
  *         description: 帳號已被停用
  */
-router.post("/login", loginValidation, validate, authController.login);
+router.post("/login", validate(loginSchema), authController.login);
 
 /**
  * @swagger
@@ -231,7 +231,6 @@ router.put(
   "/profile",
   authenticateToken,
   updateUserValidation,
-  validate,
   authController.updateProfile
 );
 

@@ -1,3 +1,5 @@
+const logger = require("../utils/logger");
+
 /**
  * 自定義錯誤類別
  */
@@ -9,6 +11,15 @@ class AppError extends Error {
     this.isOperational = true;
 
     Error.captureStackTrace(this, this.constructor);
+
+    // 記錄錯誤日誌
+    const logLevel = this.status === "fail" ? "warn" : "error";
+    logger[logLevel]({
+      message: this.message,
+      statusCode: this.statusCode,
+      stack: this.stack,
+      timestamp: new Date().toISOString(),
+    });
   }
 }
 
@@ -52,6 +63,13 @@ const handleValidationError = (err) => {
  * 開發環境錯誤處理
  */
 const sendErrorDev = (err, res) => {
+  logger.debug({
+    status: err.status,
+    error: err,
+    message: err.message,
+    stack: err.stack,
+  });
+
   res.status(err.statusCode).json({
     status: err.status,
     error: err,
@@ -66,6 +84,12 @@ const sendErrorDev = (err, res) => {
 const sendErrorProd = (err, res) => {
   // 可信的操作錯誤：發送給客戶端
   if (err.isOperational) {
+    logger.warn({
+      status: err.status,
+      message: err.message,
+      statusCode: err.statusCode,
+    });
+
     res.status(err.statusCode).json({
       status: err.status,
       message: err.message,
@@ -73,7 +97,13 @@ const sendErrorProd = (err, res) => {
   }
   // 程式錯誤：不洩露錯誤細節
   else {
-    console.error("錯誤 🔥", err);
+    logger.error({
+      status: "error",
+      message: err.message,
+      error: err,
+      stack: err.stack,
+    });
+
     res.status(500).json({
       status: "error",
       message: "系統發生錯誤",

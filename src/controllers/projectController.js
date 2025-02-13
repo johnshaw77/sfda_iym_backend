@@ -7,6 +7,15 @@ exports.createProject = async (req, res) => {
     const { name, description, status } = req.body;
     const userId = req.user.id;
 
+    // 驗證狀態值
+    const validStatuses = ["draft", "active", "completed"];
+    if (status && !validStatuses.includes(status)) {
+      return res.status(400).json({
+        message: "無效的狀態值",
+        validStatuses,
+      });
+    }
+
     const project = await prisma.project.create({
       data: {
         name,
@@ -72,7 +81,7 @@ exports.getAllProjects = async (req, res) => {
     if (includeWorkflows === "true") {
       include.workflowInstances = {
         include: {
-          template: {
+          workflowTemplate: {
             select: {
               id: true,
               templateName: true,
@@ -84,6 +93,14 @@ exports.getAllProjects = async (req, res) => {
               id: true,
               username: true,
               avatar: true,
+            },
+          },
+          nodeInstances: {
+            select: {
+              id: true,
+              status: true,
+              startTime: true,
+              endTime: true,
             },
           },
         },
@@ -133,7 +150,7 @@ exports.getProjectById = async (req, res) => {
     if (includeWorkflows === "true") {
       include.workflowInstances = {
         include: {
-          template: {
+          workflowTemplate: {
             select: {
               id: true,
               templateName: true,

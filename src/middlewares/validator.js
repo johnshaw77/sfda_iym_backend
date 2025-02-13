@@ -1,5 +1,6 @@
 const Joi = require("joi");
 const { AppError } = require("./errorHandler");
+const logger = require("../utils/logger");
 
 /**
  * 用戶註冊資料驗證規則
@@ -44,30 +45,16 @@ exports.registerValidation = async (req, res, next) => {
 /**
  * 用戶登入資料驗證規則
  */
-exports.loginValidation = async (req, res, next) => {
-  const schema = Joi.object({
-    email: Joi.string().email().required().messages({
-      "string.email": "請輸入有效的電子郵件地址",
-      "any.required": "電子郵件為必填項",
-    }),
-    password: Joi.string().required().messages({
-      "any.required": "密碼為必填項",
-    }),
-    remember: Joi.boolean(),
-  });
-
-  try {
-    await schema.validateAsync(req.body, { abortEarly: false });
-    next();
-  } catch (error) {
-    next(
-      new AppError(
-        error.details.map((detail) => detail.message).join(", "),
-        400
-      )
-    );
-  }
-};
+exports.loginSchema = Joi.object({
+  email: Joi.string().email().required().messages({
+    "string.email": "請輸入有效的電子郵件地址",
+    "any.required": "電子郵件為必填項",
+  }),
+  password: Joi.string().required().messages({
+    "any.required": "密碼為必填項",
+  }),
+  remember: Joi.boolean(),
+});
 
 /**
  * 更新用戶資料驗證規則
@@ -159,14 +146,36 @@ exports.createProjectValidation = async (req, res, next) => {
  * 通用驗證中間件
  */
 exports.validate = (schema) => {
+  console.log("通用認証開始", schema);
   return async (req, res, next) => {
     try {
+      logger.debug({
+        message: "開始驗證請求數據",
+        body: req.body,
+        path: req.path,
+      });
+
       await schema.validateAsync(req.body, { abortEarly: false });
+
+      logger.debug({
+        message: "請求數據驗證成功",
+        path: req.path,
+      });
+
       next();
     } catch (error) {
+      logger.warn({
+        message: "請求數據驗證失敗",
+        error: error.message,
+        details: error.details,
+        path: req.path,
+        body: req.body,
+      });
+
       next(
         new AppError(
-          error.details.map((detail) => detail.message).join(", "),
+          error.details?.map((detail) => detail.message).join(", ") ||
+            "驗證失敗",
           400
         )
       );

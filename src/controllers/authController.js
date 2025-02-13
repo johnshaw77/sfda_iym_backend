@@ -84,6 +84,7 @@ exports.register = async (req, res) => {
 exports.login = async (req, res) => {
   try {
     const { email, password, remember } = req.body;
+
     console.log(email, password, remember);
 
     // 查找用戶
@@ -113,7 +114,10 @@ exports.login = async (req, res) => {
       },
     });
 
+    console.log("user", user);
+
     if (!user || !(await bcrypt.compare(password, user.password))) {
+      console.log("電子郵件或密碼錯誤");
       return res.status(401).json({
         message: "電子郵件或密碼錯誤",
       });

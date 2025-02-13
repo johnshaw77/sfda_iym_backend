@@ -27,6 +27,14 @@ async function main() {
   // 創建測試用戶
   const users = [
     {
+      username: "蕭傳璋",
+      email: "john_hsiao@example.com",
+      password: await bcrypt.hash("888888", 10),
+      role: "ADMIN",
+      avatar: "👨‍💼",
+      isActive: true,
+    },
+    {
       username: "admin001",
       email: "admin001@example.com",
       password: await bcrypt.hash("Admin@123", 10),

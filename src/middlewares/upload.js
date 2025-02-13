@@ -8,18 +8,33 @@ if (!fs.existsSync(avatarUploadDir)) {
   fs.mkdirSync(avatarUploadDir, { recursive: true });
 }
 
+/**
+ * 生成安全的檔案名
+ * @param {string} originalname - 原始檔案名
+ * @returns {string} 安全的檔案名
+ */
+const generateSafeFileName = (originalname) => {
+  // 獲取檔案副檔名
+  const ext = path.extname(originalname).toLowerCase();
+  // 生成時間戳
+  const timestamp = Date.now();
+  // 生成 6 位隨機字串
+  const randomStr = Math.random().toString(36).substring(2, 8);
+  // 組合新檔案名：時間戳_隨機字串.副檔名
+  return `${timestamp}_${randomStr}${ext}`;
+};
+
 // 配置儲存
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
     cb(null, avatarUploadDir);
   },
   filename: function (req, file, cb) {
-    // 使用用戶名稱 + 時間戳作為檔案名
-    const timestamp = Date.now();
-    const username = req.user.username.replace(/[^a-zA-Z0-9]/g, "_"); // 移除不安全的字符
-    const ext = path.extname(file.originalname);
-    const filename = `${username}-${timestamp}${ext}`;
-    cb(null, filename);
+    // 使用安全的檔案名
+    const safeFileName = generateSafeFileName(file.originalname);
+    // 保存原始檔案名到 request 中，以便後續處理
+    req.originalFileName = file.originalname;
+    cb(null, safeFileName);
   },
 });
 
