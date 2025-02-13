@@ -383,6 +383,148 @@ async function main() {
     });
   }
 
+  // 創建工作流程範本
+  const workflowTemplates = [
+    {
+      templateName: "客訴分析標準流程",
+      templateCategory: "客訴分析",
+      description:
+        "用於分析客戶投訴的標準工作流程，包含數據收集、分析和報告生成",
+      version: "1.0.0",
+      status: "published",
+      config: JSON.stringify({
+        canvasSize: { width: 1920, height: 1080 },
+        gridSize: 20,
+        snapToGrid: true,
+      }),
+      createdBy: createdUsers["admin001"].id,
+    },
+    {
+      templateName: "良率分析基礎流程",
+      templateCategory: "良率分析",
+      description: "基礎的良率分析流程，適用於一般產品的良率評估",
+      version: "1.0.0",
+      status: "published",
+      config: JSON.stringify({
+        canvasSize: { width: 1920, height: 1080 },
+        gridSize: 20,
+        snapToGrid: true,
+      }),
+      createdBy: createdUsers["admin002"].id,
+    },
+    {
+      templateName: "品質異常追蹤流程",
+      templateCategory: "品質管理",
+      description: "用於追蹤和分析產品品質異常的工作流程",
+      version: "1.0.0",
+      status: "draft",
+      config: JSON.stringify({
+        canvasSize: { width: 1920, height: 1080 },
+        gridSize: 20,
+        snapToGrid: true,
+      }),
+      createdBy: createdUsers["admin001"].id,
+    },
+    {
+      templateName: "製程參數優化流程",
+      templateCategory: "製程優化",
+      description: "針對製程參數進行優化分析的工作流程",
+      version: "1.1.0",
+      status: "published",
+      config: JSON.stringify({
+        canvasSize: { width: 1920, height: 1080 },
+        gridSize: 20,
+        snapToGrid: true,
+      }),
+      createdBy: createdUsers["admin002"].id,
+    },
+    {
+      templateName: "設備效能分析流程",
+      templateCategory: "設備管理",
+      description: "分析設備運行效能和維護需求的工作流程",
+      version: "1.0.0",
+      status: "published",
+      config: JSON.stringify({
+        canvasSize: { width: 1920, height: 1080 },
+        gridSize: 20,
+        snapToGrid: true,
+      }),
+      createdBy: createdUsers["admin001"].id,
+    },
+    {
+      templateName: "原物料品質分析",
+      templateCategory: "品質管理",
+      description: "針對原物料進行品質分析的標準流程",
+      version: "1.0.0",
+      status: "draft",
+      config: JSON.stringify({
+        canvasSize: { width: 1920, height: 1080 },
+        gridSize: 20,
+        snapToGrid: true,
+      }),
+      createdBy: createdUsers["admin002"].id,
+    },
+    {
+      templateName: "產品壽命預測流程",
+      templateCategory: "產品分析",
+      description: "使用歷史數據預測產品壽命的分析流程",
+      version: "1.0.0",
+      status: "published",
+      config: JSON.stringify({
+        canvasSize: { width: 1920, height: 1080 },
+        gridSize: 20,
+        snapToGrid: true,
+      }),
+      createdBy: createdUsers["admin001"].id,
+    },
+    {
+      templateName: "包裝缺陷分析流程",
+      templateCategory: "品質管理",
+      description: "分析產品包裝缺陷的標準工作流程",
+      version: "1.0.0",
+      status: "deprecated",
+      config: JSON.stringify({
+        canvasSize: { width: 1920, height: 1080 },
+        gridSize: 20,
+        snapToGrid: true,
+      }),
+      createdBy: createdUsers["admin002"].id,
+    },
+    {
+      templateName: "供應商評估流程",
+      templateCategory: "供應鏈管理",
+      description: "評估供應商品質表現的分析流程",
+      version: "1.0.0",
+      status: "published",
+      config: JSON.stringify({
+        canvasSize: { width: 1920, height: 1080 },
+        gridSize: 20,
+        snapToGrid: true,
+      }),
+      createdBy: createdUsers["admin001"].id,
+    },
+    {
+      templateName: "新產品導入分析",
+      templateCategory: "產品分析",
+      description: "新產品導入階段的品質分析流程",
+      version: "1.0.0",
+      status: "draft",
+      config: JSON.stringify({
+        canvasSize: { width: 1920, height: 1080 },
+        gridSize: 20,
+        snapToGrid: true,
+      }),
+      createdBy: createdUsers["admin002"].id,
+    },
+  ];
+
+  // 插入工作流程範本
+  for (const template of workflowTemplates) {
+    await prisma.workflowTemplate.create({
+      data: template,
+    });
+  }
+
   console.log("已成功初始化測試數據");
 }
 

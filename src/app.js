@@ -54,6 +54,7 @@ app.use("/api/users", require("./routes/userRoutes"));
 app.use("/api/files", require("./routes/fileRoutes"));
 app.use("/api/rbac", require("./routes/rbacRoutes"));
 app.use("/api/projects", require("./routes/projectRoutes"));
+app.use("/api/workflow-templates", require("./routes/workflowTemplateRoutes"));
 
 // 錯誤處理中間件
 app.use(errorHandler);
