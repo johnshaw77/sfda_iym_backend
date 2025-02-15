@@ -1,7 +1,17 @@
 const express = require("express");
 const router = express.Router();
 const rbacController = require("../controllers/rbacController");
-const { authenticateToken, authorizeAdmin } = require("../middlewares/auth");
+const { authenticateToken } = require("../middlewares/auth");
+const checkPermission = require("../middlewares/checkPermission");
+
+// 定義權限常量
+const PERMISSIONS = {
+  MANAGE_ROLES: "MANAGE_ROLES",
+  MANAGE_PERMISSIONS: "MANAGE_PERMISSIONS",
+  ASSIGN_ROLES: "ASSIGN_ROLES",
+  VIEW_ROLES: "VIEW_ROLES",
+  VIEW_PERMISSIONS: "VIEW_PERMISSIONS",
+};
 
 /**
  * @swagger
@@ -35,7 +45,7 @@ const { authenticateToken, authorizeAdmin } = require("../middlewares/auth");
 router.post(
   "/roles",
   authenticateToken,
-  authorizeAdmin,
+  checkPermission(PERMISSIONS.MANAGE_ROLES),
   rbacController.createRole
 );
 
@@ -48,7 +58,12 @@ router.post(
  *     security:
  *       - bearerAuth: []
  */
-router.get("/roles", authenticateToken, rbacController.getAllRoles);
+router.get(
+  "/roles",
+  authenticateToken,
+  checkPermission(PERMISSIONS.VIEW_ROLES),
+  rbacController.getAllRoles
+);
 
 /**
  * @swagger
@@ -68,7 +83,7 @@ router.get("/roles", authenticateToken, rbacController.getAllRoles);
 router.put(
   "/roles/:id",
   authenticateToken,
-  authorizeAdmin,
+  checkPermission(PERMISSIONS.MANAGE_ROLES),
   rbacController.updateRole
 );
 
@@ -90,7 +105,7 @@ router.put(
 router.delete(
   "/roles/:id",
   authenticateToken,
-  authorizeAdmin,
+  checkPermission(PERMISSIONS.MANAGE_ROLES),
   rbacController.deleteRole
 );
 
@@ -106,7 +121,7 @@ router.delete(
 router.post(
   "/permissions",
   authenticateToken,
-  authorizeAdmin,
+  checkPermission(PERMISSIONS.MANAGE_PERMISSIONS),
   rbacController.createPermission
 );
 
@@ -119,7 +134,12 @@ router.post(
  *     security:
  *       - bearerAuth: []
  */
-router.get("/permissions", authenticateToken, rbacController.getAllPermissions);
+router.get(
+  "/permissions",
+  authenticateToken,
+  checkPermission(PERMISSIONS.VIEW_PERMISSIONS),
+  rbacController.getAllPermissions
+);
 
 /**
  * @swagger
@@ -133,7 +153,10 @@ router.get("/permissions", authenticateToken, rbacController.getAllPermissions);
 router.post(
   "/role-permissions",
   authenticateToken,
-  authorizeAdmin,
+  checkPermission(
+    [PERMISSIONS.MANAGE_ROLES, PERMISSIONS.MANAGE_PERMISSIONS],
+    true
+  ),
   rbacController.assignPermissionToRole
 );
 
@@ -149,7 +172,10 @@ router.post(
 router.delete(
   "/role-permissions/:roleId/:permissionId",
   authenticateToken,
-  authorizeAdmin,
+  checkPermission(
+    [PERMISSIONS.MANAGE_ROLES, PERMISSIONS.MANAGE_PERMISSIONS],
+    true
+  ),
   rbacController.removePermissionFromRole
 );
 
@@ -165,7 +191,7 @@ router.delete(
 router.post(
   "/user-roles",
   authenticateToken,
-  authorizeAdmin,
+  checkPermission(PERMISSIONS.ASSIGN_ROLES),
   rbacController.assignRoleToUser
 );
 
@@ -181,7 +207,7 @@ router.post(
 router.delete(
   "/user-roles/:userId/:roleId",
   authenticateToken,
-  authorizeAdmin,
+  checkPermission(PERMISSIONS.ASSIGN_ROLES),
   rbacController.removeRoleFromUser
 );
 

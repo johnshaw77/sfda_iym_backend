@@ -1,6 +1,8 @@
 const multer = require("multer");
 const path = require("path");
 const fs = require("fs");
+const { logger } = require("../utils/logger");
+const { AppError } = require("./errorHandler");
 
 // 確保上傳目錄存在
 const avatarUploadDir = path.join(__dirname, "../../uploads/avatars");
@@ -48,14 +50,19 @@ const fileFilter = (req, file, cb) => {
   // 允許的檔案類型
   const allowedTypes = ["image/jpeg", "image/png", "image/gif"];
   if (!allowedTypes.includes(file.mimetype)) {
-    return cb(new Error("只支援 JPG、PNG、GIF 格式的圖片"), false);
+    logger.warn("不支援的文件類型", {
+      mimetype: file.mimetype,
+      filename: file.originalname,
+      userId: req.user?.id,
+    });
+    return cb(new AppError("只支援 JPG、PNG、GIF 格式的圖片", 400), false);
   }
 
   cb(null, true);
 };
 
-// 導出上傳中間件
-exports.uploadAvatar = multer({
+// 創建上傳中間件
+const uploadAvatar = multer({
   storage: storage,
   fileFilter: fileFilter,
   limits: {
@@ -64,13 +71,22 @@ exports.uploadAvatar = multer({
 }).single("avatar");
 
 // 錯誤處理中間件
-exports.handleUploadError = (err, req, res, next) => {
+const handleUploadError = (err, req, res, next) => {
   if (err instanceof multer.MulterError) {
     if (err.code === "LIMIT_FILE_SIZE") {
+      logger.warn("文件大小超出限制", {
+        error: err.message,
+        userId: req.user?.id,
+      });
       return res.status(400).json({
         message: "檔案大小不能超過 2MB",
       });
     }
+    logger.error("文件上傳錯誤", {
+      error: err.message,
+      code: err.code,
+      userId: req.user?.id,
+    });
     return res.status(400).json({
       message: "檔案上傳錯誤",
     });
@@ -83,4 +99,11 @@ exports.handleUploadError = (err, req, res, next) => {
   }
 
   next();
+};
+
+// 統一導出所有上傳相關功能
+module.exports = {
+  uploadAvatar,
+  handleUploadError,
+  generateSafeFileName, // 導出這個函數以便其他模組可能需要使用
 };

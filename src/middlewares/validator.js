@@ -1,11 +1,11 @@
 const Joi = require("joi");
 const { AppError } = require("./errorHandler");
-const logger = require("../utils/logger");
+const { logger } = require("../utils/logger");
 
 /**
  * 用戶註冊資料驗證規則
  */
-exports.registerValidation = async (req, res, next) => {
+const registerValidation = async (req, res, next) => {
   const schema = Joi.object({
     username: Joi.string().min(3).max(30).required().messages({
       "string.min": "用戶名至少需要 3 個字符",
@@ -45,7 +45,7 @@ exports.registerValidation = async (req, res, next) => {
 /**
  * 用戶登入資料驗證規則
  */
-exports.loginSchema = Joi.object({
+const loginSchema = Joi.object({
   email: Joi.string().email().required().messages({
     "string.email": "請輸入有效的電子郵件地址",
     "any.required": "電子郵件為必填項",
@@ -59,7 +59,7 @@ exports.loginSchema = Joi.object({
 /**
  * 更新用戶資料驗證規則
  */
-exports.updateUserValidation = async (req, res, next) => {
+const updateUserValidation = async (req, res, next) => {
   const schema = Joi.object({
     username: Joi.string().min(3).max(30).messages({
       "string.min": "用戶名至少需要 3 個字符",
@@ -111,7 +111,7 @@ exports.updateUserValidation = async (req, res, next) => {
 /**
  * 創建專案資料驗證規則
  */
-exports.createProjectValidation = async (req, res, next) => {
+const createProjectValidation = async (req, res, next) => {
   const schema = Joi.object({
     name: Joi.string().required().min(1).max(100).messages({
       "string.min": "專案名稱不能為空",
@@ -143,42 +143,38 @@ exports.createProjectValidation = async (req, res, next) => {
 };
 
 /**
- * 通用驗證中間件
+ * 驗證請求參數中間件
+ * @param {Object} schema - Joi 驗證模式
+ * @param {string} type - 驗證類型 ('body' | 'query' | 'params')
  */
-exports.validate = (schema) => {
-  console.log("通用認証開始", schema);
-  return async (req, res, next) => {
-    try {
-      logger.debug({
-        message: "開始驗證請求數據",
-        body: req.body,
+const validate = (schema, type = "body") => {
+  return (req, res, next) => {
+    const { error } = schema.validate(req[type], { abortEarly: false });
+
+    if (error) {
+      const errorMessage = error.details
+        .map((detail) => detail.message)
+        .join(", ");
+
+      logger.warn("請求驗證失敗", {
         path: req.path,
+        method: req.method,
+        type,
+        errors: error.details,
+        userId: req.user?.id,
       });
 
-      await schema.validateAsync(req.body, { abortEarly: false });
-
-      logger.debug({
-        message: "請求數據驗證成功",
-        path: req.path,
-      });
-
-      next();
-    } catch (error) {
-      logger.warn({
-        message: "請求數據驗證失敗",
-        error: error.message,
-        details: error.details,
-        path: req.path,
-        body: req.body,
-      });
-
-      next(
-        new AppError(
-          error.details?.map((detail) => detail.message).join(", ") ||
-            "驗證失敗",
-          400
-        )
-      );
+      return next(new AppError(errorMessage, 400));
     }
+    next();
   };
+};
+
+// 統一導出所有驗證器
+module.exports = {
+  registerValidation,
+  loginSchema,
+  updateUserValidation,
+  createProjectValidation,
+  validate,
 };

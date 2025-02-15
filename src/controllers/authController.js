@@ -290,55 +290,68 @@ exports.updateProfile = async (req, res) => {
 exports.updateAvatar = async (req, res) => {
   try {
     if (!req.file) {
-      return res.status(400).json({
-        message: "請選擇要上傳的頭像",
-      });
+      return res.status(400).json({ message: "未上傳檔案" });
     }
 
-    // 獲取檔案相對路徑
-    const avatarPath = `/uploads/avatars/${req.file.filename}`;
+    const userId = req.user.id;
+    const avatarPath = req.file.filename;
 
-    // 獲取當前用戶資訊，包含舊的頭像路徑
-    const currentUser = await prisma.user.findUnique({
-      where: { id: req.user.id },
+    // 獲取用戶當前頭像
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
       select: { avatar: true },
     });
 
-    // 更新用戶頭像
-    const user = await prisma.user.update({
-      where: { id: req.user.id },
-      data: {
-        avatar: avatarPath,
-        updatedAt: new Date(),
-      },
-      select: {
-        id: true,
-        username: true,
-        email: true,
-        role: true,
-        avatar: true,
-        updatedAt: true,
-      },
-    });
-
-    // 如果有舊的頭像檔案，刪除它
-    if (currentUser?.avatar) {
-      const oldAvatarPath = path.join(__dirname, "../..", currentUser.avatar);
-      // 確保不是預設頭像
-      if (
-        fs.existsSync(oldAvatarPath) &&
-        !oldAvatarPath.includes("default-avatar")
-      ) {
+    // 如果存在舊頭像，刪除它
+    if (user.avatar) {
+      const oldAvatarPath = path.join(
+        __dirname,
+        "../../uploads/avatars",
+        user.avatar
+      );
+      if (fs.existsSync(oldAvatarPath)) {
         fs.unlinkSync(oldAvatarPath);
       }
     }
 
+    // 更新用戶頭像
+    const updatedUser = await prisma.user.update({
+      where: { id: userId },
+      data: { avatar: avatarPath },
+      select: {
+        id: true,
+        username: true,
+        email: true,
+        avatar: true,
+      },
+    });
+
     res.json({
       message: "頭像更新成功",
-      user,
+      user: updatedUser,
     });
   } catch (error) {
     console.error("更新頭像錯誤:", error);
+    // 如果更新失敗，刪除已上傳的檔案
+    if (req.file) {
+      const filePath = path.join(
+        __dirname,
+        "../../uploads/avatars",
+        req.file.filename
+      );
+      if (fs.existsSync(filePath)) {
+        fs.unlinkSync(filePath);
+      }
+    }
     res.status(500).json({ message: "伺服器錯誤" });
   }
+};
+
+// 修正導出方式
+module.exports = {
+  register: exports.register,
+  login: exports.login,
+  getCurrentUser: exports.getCurrentUser,
+  updateProfile: exports.updateProfile,
+  updateAvatar: exports.updateAvatar,
 };

@@ -7,6 +7,7 @@ const swaggerJsdoc = require("swagger-jsdoc");
 const { errorHandler } = require("./middlewares/errorHandler");
 const path = require("path");
 const { PrismaClient } = require("@prisma/client");
+const loggerMiddleware = require("./middlewares/loggerMiddleware");
 require("dotenv").config();
 
 const app = express();
@@ -23,6 +24,9 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(morgan("dev"));
+
+// 應用日誌中間件
+app.use(loggerMiddleware);
 
 // 靜態檔案服務
 app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
@@ -58,6 +62,25 @@ app.use("/api/workflow-templates", require("./routes/workflowTemplateRoutes"));
 
 // 錯誤處理中間件
 app.use(errorHandler);
+
+// 全局錯誤處理中間件
+app.use((err, req, res, next) => {
+  const { logger } = require("./utils/logger");
+  logger.error("未處理的錯誤:", {
+    error: err.message,
+    stack: err.stack,
+    path: req.path,
+    method: req.method,
+    body: req.body,
+    query: req.query,
+    user: req.user,
+  });
+
+  res.status(500).json({
+    message: "伺服器錯誤",
+    error: process.env.NODE_ENV === "development" ? err.message : undefined,
+  });
+});
 
 // 優雅關閉
 process.on("SIGTERM", async () => {

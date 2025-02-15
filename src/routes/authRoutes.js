@@ -249,8 +249,6 @@ router.put(
  *         multipart/form-data:
  *           schema:
  *             type: object
- *             required:
- *               - avatar
  *             properties:
  *               avatar:
  *                 type: string
@@ -259,15 +257,6 @@ router.put(
  *     responses:
  *       200:
  *         description: 頭像更新成功
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                 user:
- *                   $ref: '#/components/schemas/User'
  *       400:
  *         description: 檔案格式或大小不符合要求
  *       401:
