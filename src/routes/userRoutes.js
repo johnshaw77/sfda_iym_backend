@@ -1,7 +1,13 @@
 const express = require("express");
 const router = express.Router();
+const multer = require("multer");
+const path = require("path");
 const userController = require("../controllers/userController");
-const { authenticateToken, authorize } = require("../middlewares/auth");
+const {
+  authenticateToken,
+  authorize,
+  authorizeAdmin,
+} = require("../middlewares/auth");
 
 /**
  * @swagger
@@ -13,6 +19,36 @@ const { authenticateToken, authorize } = require("../middlewares/auth");
 // 所有路由都需要認證和權限
 router.use(authenticateToken);
 router.use(authorize("MANAGE_USERS"));
+
+// 配置 multer 存儲
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, path.join(__dirname, "../../uploads/avatars"));
+  },
+  filename: function (req, file, cb) {
+    const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
+    cb(null, uniqueSuffix + path.extname(file.originalname));
+  },
+});
+
+const upload = multer({
+  storage: storage,
+  limits: {
+    fileSize: 5 * 1024 * 1024, // 限制 5MB
+  },
+  fileFilter: function (req, file, cb) {
+    const filetypes = /jpeg|jpg|png|gif/;
+    const mimetype = filetypes.test(file.mimetype);
+    const extname = filetypes.test(
+      path.extname(file.originalname).toLowerCase()
+    );
+
+    if (mimetype && extname) {
+      return cb(null, true);
+    }
+    cb(new Error("只允許上傳圖片文件"));
+  },
+});
 
 /**
  * @swagger
@@ -285,5 +321,51 @@ router.post("/user-roles", userController.assignRoleToUser);
  *         description: 該用戶未分配此角色
  */
 router.delete("/user-roles/:userId/:roleId", userController.removeRoleFromUser);
+
+/**
+ * @swagger
+ * /api/users/{id}/avatar:
+ *   post:
+ *     tags: [用戶管理]
+ *     summary: 上傳用戶頭像
+ *     description: 上傳並更新用戶的頭像（需要管理員權限）
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: 用戶ID
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               avatar:
+ *                 type: string
+ *                 format: binary
+ *     responses:
+ *       200:
+ *         description: 頭像上傳成功
+ *       400:
+ *         description: 請求錯誤
+ *       401:
+ *         description: 未提供認證令牌或令牌無效
+ *       403:
+ *         description: 沒有管理員權限
+ *       404:
+ *         description: 用戶不存在
+ */
+router.post(
+  "/:id/avatar",
+  authenticateToken,
+  authorizeAdmin,
+  upload.single("avatar"),
+  userController.uploadAvatar
+);
 
 module.exports = router;

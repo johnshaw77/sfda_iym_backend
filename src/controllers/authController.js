@@ -3,6 +3,7 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const path = require("path");
 const fs = require("fs");
+const avatarService = require("../services/avatarService");
 
 const prisma = new PrismaClient();
 
@@ -49,6 +50,7 @@ exports.register = async (req, res) => {
         username: true,
         email: true,
         role: true,
+        avatar: true,
         userRoles: {
           select: {
             role: {
@@ -69,10 +71,16 @@ exports.register = async (req, res) => {
       { expiresIn: process.env.JWT_EXPIRES_IN }
     );
 
+    // 添加頭像 URL
+    const responseUser = {
+      ...user,
+      avatar: avatarService.getAvatarUrl(user.avatar),
+    };
+
     res.status(201).json({
       message: "註冊成功",
       token,
-      user,
+      user: responseUser,
     });
   } catch (error) {
     console.error("註冊錯誤:", error);
@@ -153,6 +161,7 @@ exports.login = async (req, res) => {
       username: user.username,
       email: user.email,
       role: user.role,
+      avatar: avatarService.getAvatarUrl(user.avatar),
       roles: user.userRoles.map((ur) => ({
         name: ur.role.name,
         description: ur.role.description,
@@ -213,6 +222,7 @@ exports.getCurrentUser = async (req, res) => {
     // 重組權限數據
     const userWithPermissions = {
       ...user,
+      avatar: avatarService.getAvatarUrl(user.avatar),
       roles: user.userRoles.map((ur) => ({
         name: ur.role.name,
         description: ur.role.description,
@@ -271,9 +281,15 @@ exports.updateProfile = async (req, res) => {
       },
     });
 
+    // 添加頭像 URL
+    const responseUser = {
+      ...updatedUser,
+      avatar: avatarService.getAvatarUrl(updatedUser.avatar),
+    };
+
     res.json({
       message: "資料更新成功",
-      user: updatedUser,
+      user: responseUser,
     });
   } catch (error) {
     if (error.code === "P2002") {
@@ -286,64 +302,38 @@ exports.updateProfile = async (req, res) => {
   }
 };
 
-// 更新用戶頭像
+/**
+ * 更新用戶頭像(當前登錄的用戶)
+ */
 exports.updateAvatar = async (req, res) => {
   try {
-    if (!req.file) {
-      return res.status(400).json({ message: "未上傳檔案" });
-    }
-
     const userId = req.user.id;
-    const avatarPath = req.file.filename;
+    const file = req.file;
 
-    // 獲取用戶當前頭像
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
-      select: { avatar: true },
-    });
-
-    // 如果存在舊頭像，刪除它
-    if (user.avatar) {
-      const oldAvatarPath = path.join(
-        __dirname,
-        "../../uploads/avatars",
-        user.avatar
-      );
-      if (fs.existsSync(oldAvatarPath)) {
-        fs.unlinkSync(oldAvatarPath);
-      }
+    if (!file) {
+      return res.status(400).json({ message: "請選擇要上傳的頭像" });
     }
 
-    // 更新用戶頭像
-    const updatedUser = await prisma.user.update({
-      where: { id: userId },
-      data: { avatar: avatarPath },
-      select: {
-        id: true,
-        username: true,
-        email: true,
-        avatar: true,
-      },
-    });
+    try {
+      avatarService.validateAvatarFile(file);
+    } catch (error) {
+      // 驗證失敗時刪除上傳的文件
+      await avatarService.deleteFile(file.path);
+      return res.status(400).json({ message: error.message });
+    }
 
-    res.json({
-      message: "頭像更新成功",
-      user: updatedUser,
-    });
+    const result = await avatarService.uploadAvatar(userId, file);
+    console.log("resultdd", result);
+    res.json(result);
   } catch (error) {
-    console.error("更新頭像錯誤:", error);
-    // 如果更新失敗，刪除已上傳的檔案
+    console.error("更新頭像失敗:", error);
+    // 如果上傳過程中出錯，刪除已上傳的文件
     if (req.file) {
-      const filePath = path.join(
-        __dirname,
-        "../../uploads/avatars",
-        req.file.filename
-      );
-      if (fs.existsSync(filePath)) {
-        fs.unlinkSync(filePath);
-      }
+      await avatarService.deleteFile(req.file.path);
     }
-    res.status(500).json({ message: "伺服器錯誤" });
+    res.status(error.message === "用戶不存在" ? 404 : 500).json({
+      message: error.message || "更新頭像失敗",
+    });
   }
 };
 

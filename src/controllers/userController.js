@@ -1,5 +1,8 @@
 const { PrismaClient } = require("@prisma/client");
 const bcrypt = require("bcryptjs");
+const path = require("path");
+const fs = require("fs");
+const avatarService = require("../services/avatarService");
 const prisma = new PrismaClient();
 
 /**
@@ -22,6 +25,7 @@ exports.getAllUsers = async (req, res) => {
       id: user.id,
       username: user.username,
       email: user.email,
+      avatar: avatarService.getAvatarUrl(user.avatar),
       status: user.isActive ? "active" : "inactive",
       createdAt: user.createdAt,
       updatedAt: user.updatedAt,
@@ -62,6 +66,7 @@ exports.getUser = async (req, res) => {
       id: user.id,
       username: user.username,
       email: user.email,
+      avatar: avatarService.getAvatarUrl(user.avatar),
       status: user.isActive ? "active" : "inactive",
       createdAt: user.createdAt,
       updatedAt: user.updatedAt,
@@ -109,6 +114,7 @@ exports.createUser = async (req, res) => {
         username: true,
         email: true,
         isActive: true,
+        avatar: true,
         createdAt: true,
         updatedAt: true,
       },
@@ -118,6 +124,7 @@ exports.createUser = async (req, res) => {
     const responseUser = {
       ...user,
       status: user.isActive ? "active" : "inactive",
+      avatar: avatarService.getAvatarUrl(user.avatar),
     };
     delete responseUser.isActive;
 
@@ -172,6 +179,7 @@ exports.updateUser = async (req, res) => {
         username: true,
         email: true,
         isActive: true,
+        avatar: true,
         createdAt: true,
         updatedAt: true,
       },
@@ -181,6 +189,7 @@ exports.updateUser = async (req, res) => {
     const responseUser = {
       ...updatedUser,
       status: updatedUser.isActive ? "active" : "inactive",
+      avatar: avatarService.getAvatarUrl(updatedUser.avatar),
     };
     delete responseUser.isActive;
 
@@ -322,5 +331,39 @@ exports.removeRoleFromUser = async (req, res) => {
   } catch (error) {
     console.error("移除角色失敗:", error);
     res.status(500).json({ message: "移除角色失敗" });
+  }
+};
+
+/**
+ * 上傳用戶頭像
+ */
+exports.uploadAvatar = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const file = req.file;
+
+    if (!file) {
+      return res.status(400).json({ message: "請選擇要上傳的頭像" });
+    }
+
+    try {
+      avatarService.validateAvatarFile(file);
+    } catch (error) {
+      // 驗證失敗時刪除上傳的文件
+      await avatarService.deleteFile(file.path);
+      return res.status(400).json({ message: error.message });
+    }
+
+    const result = await avatarService.uploadAvatar(id, file);
+    res.json(result);
+  } catch (error) {
+    console.error("上傳頭像失敗:", error);
+    // 如果上傳過程中出錯，刪除已上傳的文件
+    if (req.file) {
+      await avatarService.deleteFile(req.file.path);
+    }
+    res.status(error.message === "用戶不存在" ? 404 : 500).json({
+      message: error.message || "上傳頭像失敗",
+    });
   }
 };

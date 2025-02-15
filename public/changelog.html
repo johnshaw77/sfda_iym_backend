@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SFDA IYM 後端更新日誌</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            line-height: 1.6;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f7fa;
+            color: #2c3e50;
+            font-size: 15px;
+        }
+        
+        .container {
+            background-color: white;
+            border-radius: 8px;
+            padding: 30px;
+            box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            color: #409eff;
+            border-bottom: 2px solid #eaeaea;
+            padding-bottom: 10px;
+            margin-bottom: 30px;
+            font-size: 28px;
+        }
+
+        h2 {
+            color: #606266;
+            margin-top: 30px;
+            font-size: 24px;
+        }
+
+        h3 {
+            font-size: 20px;
+        }
+
+        .version {
+            background-color: #f0f9eb;
+            border-left: 4px solid #67c23a;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 4px;
+            font-size: 15px;
+        }
+
+        .version h3 {
+            color: #67c23a;
+            margin: 0 0 10px 0;
+        }
+
+        .tech-stack {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .tech-item {
+            background-color: #ecf5ff;
+            padding: 10px;
+            border-radius: 4px;
+            text-align: center;
+            font-size: 15px;
+        }
+
+        .feature-list {
+            list-style: none;
+            padding: 0;
+            font-size: 15px;
+        }
+
+        .feature-list li {
+            margin: 10px 0;
+            padding-left: 25px;
+            position: relative;
+        }
+
+        .feature-list li:before {
+            content: "✓";
+            color: #67c23a;
+            position: absolute;
+            left: 0;
+        }
+
+        .warning {
+            background-color: #fef0f0;
+            border-left: 4px solid #f56c6c;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 4px;
+            color: #f56c6c;
+            font-size: 15px;
+        }
+
+        .info {
+            background-color: #f4f4f5;
+            border-left: 4px solid #909399;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 4px;
+            font-size: 15px;
+        }
+
+        .code {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 4px;
+            font-family: monospace;
+            margin: 10px 0;
+            font-size: 14px;
+        }
+
+        .tag {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 13px;
+            margin-right: 5px;
+        }
+
+        .tag.new {
+            background-color: #f0f9eb;
+            color: #67c23a;
+        }
+
+        .tag.fix {
+            background-color: #fef0f0;
+            color: #f56c6c;
+        }
+
+        .tag.update {
+            background-color: #ecf5ff;
+            color: #409eff;
+        }
+
+        .tag.optimize {
+            background-color: #fdf6ec;
+            color: #e6a23c;
+        }
+
+        ul {
+            font-size: 15px;
+        }
+
+        p {
+            font-size: 15px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>SFDA IYM 後端更新日誌</h1>
+        
+        <h2>系統架構</h2>
+        <div class="info">
+            <div class="code">
+backend/
+├── src/                # 源代碼目錄
+│   ├── config/        # 配置文件
+│   ├── controllers/   # 控制器
+│   ├── middlewares/   # 中間件
+│   ├── models/        # 數據模型
+│   ├── routes/        # 路由定義
+│   ├── services/      # 業務邏輯
+│   └── utils/         # 工具函數
+├── prisma/            # Prisma 配置和遷移
+├── tests/             # 測試文件
+├── uploads/           # 上傳文件存儲
+└── docs/             # API 文檔
+            </div>
+        </div>
+
+        <h2>技術棧</h2>
+        <div class="tech-stack">
+            <div class="tech-item">Node.js 18.x</div>
+            <div class="tech-item">Express.js 4.18.2</div>
+            <div class="tech-item">Prisma ORM 5.10.2</div>
+            <div class="tech-item">SQLite</div>
+            <div class="tech-item">JWT + bcrypt</div>
+            <div class="tech-item">Multer 1.4.5</div>
+            <div class="tech-item">Sharp 0.33.2</div>
+            <div class="tech-item">Swagger UI Express</div>
+        </div>
+
+        <h2>最新功能</h2>
+        <div class="version">
+            <h3>v1.3.1 (2025-03-22)</h3>
+            <div class="feature-list">
+                <li><span class="tag optimize">優化</span>檔案處理系統</li>
+                <ul>
+                    <li>改進頭像上傳功能
+                        <ul>
+                            <li>加強文件驗證機制</li>
+                            <li>優化錯誤處理流程</li>
+                            <li>改進文件存儲結構</li>
+                        </ul>
+                    </li>
+                </ul>
+                <li><span class="tag update">更新</span>改進 RBAC 系統</li>
+                <ul>
+                    <li>優化角色權限管理
+                        <ul>
+                            <li>改進用戶角色分配</li>
+                            <li>加強權限驗證</li>
+                            <li>優化權限繼承機制</li>
+                        </ul>
+                    </li>
+                </ul>
+                <li><span class="tag optimize">優化</span>系統性能</li>
+                <ul>
+                    <li>改進資料庫查詢效率</li>
+                    <li>優化檔案存儲機制</li>
+                    <li>加強快取處理</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="warning">
+            <h3>重要提醒</h3>
+            <p>本次更新包含以下重要變更：</p>
+            <ul>
+                <li>文件存儲路徑結構變更，需要執行遷移腳本</li>
+                <li>權限驗證機制加強，可能需要更新客戶端邏輯</li>
+                <li>快取機制改進，建議清理舊的快取數據</li>
+            </ul>
+        </div>
+
+        <h2>歷史版本</h2>
+        <div class="version">
+            <h3>v1.3.0 (2025-02-20)</h3>
+            <ul class="feature-list">
+                <li><span class="tag new">新增</span>完整的 RBAC 權限管理</li>
+                <li><span class="tag update">更新</span>優化資料庫結構</li>
+                <li><span class="tag update">更新</span>改進 API 響應機制</li>
+                <li><span class="tag update">更新</span>加強安全性配置</li>
+            </ul>
+        </div>
+
+        <div class="version">
+            <h3>v1.2.0 (2025-02-15)</h3>
+            <ul class="feature-list">
+                <li><span class="tag new">新增</span>文件管理功能</li>
+                <li><span class="tag update">更新</span>優化認證機制</li>
+                <li><span class="tag update">更新</span>改進錯誤處理</li>
+                <li><span class="tag new">新增</span>日誌系統</li>
+            </ul>
+        </div>
+
+        <div class="version">
+            <h3>v1.1.0 (2025-02-13)</h3>
+            <ul class="feature-list">
+                <li><span class="tag new">新增</span>用戶管理功能</li>
+                <li><span class="tag update">更新</span>完善 API 文檔</li>
+                <li><span class="tag optimize">優化</span>系統性能</li>
+                <li><span class="tag update">更新</span>改進開發體驗</li>
+            </ul>
+        </div>
+
+        <div class="version">
+            <h3>v1.0.0 (2025-02-01)</h3>
+            <ul class="feature-list">
+                <li><span class="tag new">新增</span>初始版本發布</li>
+                <li><span class="tag new">新增</span>基礎功能實現</li>
+                <li><span class="tag new">新增</span>核心架構搭建</li>
+                <li><span class="tag new">新增</span>基本 API 實現</li>
+            </ul>
+        </div>
+
+        <h2>部署說明</h2>
+        <div class="info">
+            <h3>環境要求</h3>
+            <ul>
+                <li>Node.js >= 18.0.0</li>
+                <li>npm >= 9.0.0</li>
+                <li>SQLite >= 3.0.0</li>
+            </ul>
+
+            <h3>部署步驟</h3>
+            <div class="code">
+# 1. 安裝依賴
+npm install
+
+# 2. 設置環境變數
+cp .env.example .env
+
+# 3. 資料庫初始化
+npx prisma migrate dev
+npx prisma db seed
+
+# 4. 建構專案
+npm run build
+
+# 5. 啟動服務
+npm start
+            </div>
+        </div>
+
+        <h2>API 文檔</h2>
+        <div class="info">
+            <p>訪問 <code>http://localhost:3000/api-docs</code> 查看完整的 API 文檔。</p>
+        </div>
+
+        <h2>聯繫方式</h2>
+        <div class="info">
+            <ul>
+                <li>後端開發：backend@example.com</li>
+                <li>系統維護：ops@example.com</li>
+                <li>技術支持：support@example.com</li>
+            </ul>
+        </div>
+    </div>
+</body>
+</html> 

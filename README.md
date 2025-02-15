@@ -1,5 +1,9 @@
 # SFDA IYM 後端專案
 
+## 專案簡介
+
+SFDA IYM（Improve Your Manufacturing）後端服務，採用 Node.js + Express.js 開發，提供完整的 RESTful API 支持，包含用戶認證、檔案管理、數據分析等功能。
+
 ## 已完成功能
 
 1. 檔案管理
@@ -97,101 +101,179 @@
 
 ## 技術棧
 
-- Node.js & Express.js
-- Prisma ORM
-- SQLite 資料庫
-- JWT 認證
-- bcrypt 密碼加密
-- Express Validator
-- Swagger API 文檔
-- Multer 檔案上傳
-- Sharp 圖片處理
+- **核心框架：** Node.js 18.x + Express.js 4.18.2
+- **資料庫：** SQLite + Prisma ORM 5.10.2
+- **認證：** JWT + bcrypt
+- **檔案處理：** Multer 1.4.5 + Sharp 0.33.2
+- **API文檔：** Swagger UI Express 5.0.0
+- **日誌：** Winston 3.11.0
+- **測試：** Jest 29.7.0 + Supertest 6.3.4
 
-## 資料庫設計
+## 系統架構
 
-### 用戶表 (User)
-- id: 唯一識別碼
-- username: 用戶名
-- email: 電子郵件
-- password: 加密密碼
-- role: 用戶角色 (admin/user)
-- avatar: 頭像路徑
-- isActive: 帳號狀態
-- createdAt: 創建時間
-- updatedAt: 更新時間
+```
+backend/
+├── src/                # 源代碼目錄
+│   ├── config/        # 配置文件
+│   ├── controllers/   # 控制器
+│   ├── middlewares/   # 中間件
+│   ├── models/        # 數據模型
+│   ├── routes/        # 路由定義
+│   ├── services/      # 業務邏輯
+│   └── utils/         # 工具函數
+├── prisma/            # Prisma 配置和遷移
+├── tests/             # 測試文件
+├── uploads/           # 上傳文件存儲
+└── docs/             # API 文檔
+```
 
-## 版本資訊
+## 主要功能
 
-- 當前版本：1.3.0
-- 最後更新：2024-03-22
-- 更新內容：
-  1. RBAC 系統升級
-     - 新增角色類型（SUPER_ADMIN）
-     - 優化角色權限管理
-     - 改進用戶角色分配機制
-     - 添加角色權限繼承功能
-  2. API 優化
-     - 新增角色管理相關 API
-     - 改進用戶管理 API
-     - 優化權限驗證中間件
-  3. 資料庫優化
-     - 改進用戶角色關聯結構
-     - 優化查詢性能
-     - 添加資料完整性約束
-  4. 安全性更新
-     - 加強權限驗證
-     - 優化錯誤處理
-     - 改進日誌記錄
+### 1. 用戶認證系統
+- JWT 身份驗證
+- 角色權限控制（RBAC）
+- 密碼加密存儲
+- 會話管理
+- 用戶資料管理
+
+### 2. 檔案管理系統
+- 多格式文件支持
+- 自動文件驗證
+- 安全存儲機制
+- 檔案訪問控制
+- 自動清理機制
+
+### 3. RBAC 權限系統
+- 角色管理
+- 權限分配
+- 訪問控制
+- 操作日誌
+- 權限繼承
+
+### 4. API 安全機制
+- 請求驗證
+- 速率限制
+- CORS 配置
+- 錯誤處理
+- 日誌記錄
 
 ## 開發指南
+
+### 環境要求
+- Node.js >= 18.0.0
+- npm >= 9.0.0
+- SQLite >= 3.0.0
+
+### 安裝步驟
 
 1. 安裝依賴
 ```bash
 npm install
 ```
 
-2. 設置環境變數
+2. 環境配置
 ```bash
 cp .env.example .env
 ```
 
-3. 初始化資料庫
+3. 資料庫初始化
 ```bash
 npx prisma migrate dev
+npx prisma db seed
 ```
 
-4. 初始化角色和測試用戶
+4. 啟動服務
 ```bash
-npm run prisma:seed
-```
-
-5. 啟動開發服務器
-```bash
+# 開發環境
 npm run dev
+
+# 生產環境
+npm run build
+npm start
 ```
 
 ## API 文檔
 
-訪問 `http://localhost:3000/api-docs` 查看完整 API 文檔
+訪問 `http://localhost:3000/api-docs` 查看完整 API 文檔。
 
-## 其它
+## 更新日誌
 
-- 生成 JWT_SECRET
+### v1.3.1 (2024-03-22)
+- 優化檔案處理系統
+  - 改進頭像上傳功能
+  - 加強文件驗證機制
+  - 優化錯誤處理流程
+- 改進 RBAC 系統
+  - 優化角色權限管理
+  - 改進用戶角色分配
+  - 加強權限驗證
+- 系統性能優化
+  - 改進資料庫查詢效率
+  - 優化檔案存儲機制
+  - 加強快取處理
+
+### v1.3.0 (2024-02-20)
+- 新增完整的 RBAC 權限管理
+- 優化資料庫結構
+- 改進 API 響應機制
+- 加強安全性配置
+
+### v1.2.0 (2024-02-15)
+- 新增文件管理功能
+- 優化認證機制
+- 改進錯誤處理
+- 新增日誌系統
+
+### v1.1.0 (2024-02-13)
+- 新增用戶管理功能
+- 完善 API 文檔
+- 優化性能
+- 改進開發體驗
+
+### v1.0.0 (2024-02-01)
+- 初始版本發布
+- 基礎功能實現
+- 核心架構搭建
+- 基本 API 實現
+
+## 測試
+
 ```bash
-openssl rand -hex 64
+# 運行所有測試
+npm test
+
+# 運行特定測試
+npm test -- users.test.js
+
+# 測試覆蓋率報告
+npm run test:coverage
 ```
 
-- 訪問 Prisma Studio 查看數據
+## 部署
+
+1. 建構專案
 ```bash
-npx prisma studio
+npm run build
 ```
 
-## 其它 ###
-- 訪問 `http://localhost:3000/api/users` 查看用戶列表
-- 訪問 `http://localhost:3000/api/users/1` 查看用戶詳細資訊
-- 訪問 `http://localhost:3000/api/users/1` 更新用戶資訊
-- 訪問 `http://localhost:3000/api/users/1` 刪除用戶
+2. 設置環境變數
+```bash
+NODE_ENV=production
+PORT=3000
+JWT_SECRET=your-secret-key
+```
 
-## API 文檔
+3. 啟動服務
+```bash
+npm start
+```
 
-訪問 `http://localhost:3000/api-docs` 查看完整 API 文檔 
+## 維護團隊
+
+- 後端開發：backend@example.com
+- 系統維護：ops@example.com
+- 技術支持：support@example.com
+
+## 授權說明
+
+本專案為私有軟體，未經授權不得使用、複製或分發。 

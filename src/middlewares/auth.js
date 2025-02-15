@@ -18,9 +18,7 @@ exports.authenticateToken = async (req, res, next) => {
     }
 
     // 驗證 token
-    console.log("token", token);
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    console.log("decoded", decoded);
     // 檢查用戶是否存在且啟用
     const user = await prisma.user.findUnique({
       where: { id: decoded.userId },
