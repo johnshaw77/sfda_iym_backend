@@ -132,10 +132,29 @@ exports.assignPermissionToRole = async (req, res) => {
   try {
     const { roleId, permissionId } = req.body;
 
+    // 檢查角色和權限是否存在
+    const role = await prisma.role.findUnique({
+      where: { id: roleId },
+    });
+
+    const permission = await prisma.permission.findUnique({
+      where: { id: permissionId },
+    });
+
+    if (!role || !permission) {
+      return res.status(404).json({
+        message: !role ? "角色不存在" : "權限不存在",
+      });
+    }
+
     const rolePermission = await prisma.rolePermission.create({
       data: {
-        roleId,
-        permissionId,
+        role: {
+          connect: { id: roleId },
+        },
+        permission: {
+          connect: { id: permissionId },
+        },
       },
       include: {
         role: true,
