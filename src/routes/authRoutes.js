@@ -270,4 +270,28 @@ router.put(
   authController.updateAvatar
 );
 
+/**
+ * @swagger
+ * /api/auth/logout:
+ *   post:
+ *     tags: [認證]
+ *     summary: 用戶登出
+ *     description: 登出當前用戶
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: 登出成功
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *       401:
+ *         description: 未提供認證令牌或令牌無效
+ */
+router.post("/logout", authenticateToken, authController.logout);
+
 module.exports = router;

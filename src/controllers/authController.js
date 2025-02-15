@@ -337,6 +337,19 @@ exports.updateAvatar = async (req, res) => {
   }
 };
 
+// 用戶登出
+exports.logout = async (req, res) => {
+  try {
+    // 在這裡可以添加任何需要的清理邏輯
+    // 例如：清除 session、刪除 refresh token 等
+
+    res.json({ message: "登出成功" });
+  } catch (error) {
+    console.error("登出錯誤:", error);
+    res.status(500).json({ message: "伺服器錯誤" });
+  }
+};
+
 // 修正導出方式
 module.exports = {
   register: exports.register,
@@ -344,4 +357,5 @@ module.exports = {
   getCurrentUser: exports.getCurrentUser,
   updateProfile: exports.updateProfile,
   updateAvatar: exports.updateAvatar,
+  logout: exports.logout,
 };
