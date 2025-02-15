@@ -27,7 +27,7 @@ exports.createRole = async (req, res) => {
     res.status(500).json({ message: "伺服器錯誤" });
   }
 };
-
+// 獲取所有角色列表
 exports.getAllRoles = async (req, res) => {
   try {
     const roles = await prisma.role.findMany({
@@ -47,6 +47,7 @@ exports.getAllRoles = async (req, res) => {
   }
 };
 
+// 更新角色
 exports.updateRole = async (req, res) => {
   try {
     const { id } = req.params;
@@ -75,6 +76,7 @@ exports.updateRole = async (req, res) => {
   }
 };
 
+// 刪除角色
 exports.deleteRole = async (req, res) => {
   try {
     const { id } = req.params;
@@ -117,6 +119,7 @@ exports.createPermission = async (req, res) => {
   }
 };
 
+// 獲取所有權限列表
 exports.getAllPermissions = async (req, res) => {
   try {
     const permissions = await prisma.permission.findMany();
@@ -177,6 +180,7 @@ exports.assignPermissionToRole = async (req, res) => {
   }
 };
 
+// 移除權限從角色
 exports.removePermissionFromRole = async (req, res) => {
   try {
     const { roleId, permissionId } = req.params;
@@ -228,6 +232,7 @@ exports.assignRoleToUser = async (req, res) => {
   }
 };
 
+// 移除角色從用戶
 exports.removeRoleFromUser = async (req, res) => {
   try {
     const { userId, roleId } = req.params;
