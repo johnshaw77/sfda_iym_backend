@@ -44,6 +44,10 @@ model User {
   createdWorkflowInstances WorkflowInstance[] @relation("CreatedWorkflowInstances")
   uploadedFiles            FileNode[]         @relation("UploadedFiles")
 
+  // 新增關聯
+  createdSystemCodes SystemCode[] @relation("CreatedSystemCodes")
+  updatedSystemCodes SystemCode[] @relation("UpdatedSystemCodes")
+
   @@index([email])
   @@map("User")
 }
@@ -127,21 +131,25 @@ model RolePermission {
 
 model Project {
   /// 專案唯一識別碼
-  id          String   @id @default(uuid())
+  id            String   @id @default(uuid())
+  /// 專案編號（自動生成，格式：systemCode_YYYYMMDD_HHMMSS_XXXXX）
+  projectNumber String   @unique
+  /// 系統代碼
+  systemCode    String
   /// 專案名稱
-  name        String
+  name          String
   /// 專案描述
-  description String?
+  description   String?
   /// 專案狀態（draft、active、completed、archived）
-  status      String   @default("draft")
+  status        String   @default("draft")
   /// 創建者ID
-  createdBy   String
+  createdBy     String
   /// 最後更新者ID
-  updatedBy   String
+  updatedBy     String
   /// 創建時間
-  createdAt   DateTime @default(now())
+  createdAt     DateTime @default(now())
   /// 最後更新時間
-  updatedAt   DateTime @updatedAt
+  updatedAt     DateTime @updatedAt
 
   // 關聯
   creator           User               @relation("CreatedProjects", fields: [createdBy], references: [id])
@@ -525,4 +533,29 @@ model ApiLog {
   createdAt      DateTime @default(now())
 
   @@map("ApiLog")
+}
+
+model SystemCode {
+  /// 系統代碼，作為主鍵
+  systemCode        String   @id
+  /// 系統名稱
+  systemName        String
+  /// 系統描述
+  systemDescription String?
+  /// 是否啟用
+  isEnabled         Boolean  @default(true)
+  /// 創建時間
+  createdAt         DateTime @default(now())
+  /// 最後更新時間
+  updatedAt         DateTime @updatedAt
+  /// 創建者ID
+  createdBy         String
+  /// 最後更新者ID
+  updatedBy         String
+
+  // 關聯
+  creator User @relation("CreatedSystemCodes", fields: [createdBy], references: [id])
+  updater User @relation("UpdatedSystemCodes", fields: [updatedBy], references: [id])
+
+  @@map("SystemCode")
 }

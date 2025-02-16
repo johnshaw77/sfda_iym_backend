@@ -1,11 +1,20 @@
 const { PrismaClient } = require("@prisma/client");
 const prisma = new PrismaClient();
 
+// 生成專案編號
+const generateProjectNumber = (systemCode) => {
+  const date = new Date();
+  const dateStr = date.toISOString().replace(/[-:]/g, "").slice(0, 8);
+  const randomStr = Math.random().toString(36).substring(2, 7).toUpperCase();
+  return `${systemCode}_${dateStr}_${randomStr}`;
+};
+
 // 創建新專案
 exports.createProject = async (req, res) => {
   try {
     const { name, description, status } = req.body;
     const userId = req.user.id;
+    const defaultSystemCode = process.env.DEFAULT_SYSTEM_CODE || "IYM";
 
     // 驗證狀態值
     const validStatuses = ["draft", "active", "completed"];
@@ -21,6 +30,8 @@ exports.createProject = async (req, res) => {
         name,
         description,
         status: status || "draft",
+        systemCode: defaultSystemCode,
+        projectNumber: generateProjectNumber(defaultSystemCode),
         createdBy: userId,
         updatedBy: userId,
       },

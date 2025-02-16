@@ -3,12 +3,13 @@ const bcrypt = require("bcryptjs");
 const prisma = new PrismaClient();
 
 async function main() {
-  // 清理現有數據
-  await prisma.nodeType.deleteMany();
+  // 清理現有數據（注意順序以避免外鍵約束問題）
   await prisma.project.deleteMany();
-  await prisma.user.deleteMany();
-  await prisma.role.deleteMany();
+  await prisma.systemCode.deleteMany();
   await prisma.userRole.deleteMany();
+  await prisma.role.deleteMany();
+  await prisma.user.deleteMany();
+  await prisma.nodeType.deleteMany();
 
   // 創建基本角色
   const roles = [
@@ -21,6 +22,62 @@ async function main() {
   for (const role of roles) {
     createdRoles[role.name] = await prisma.role.create({
       data: role,
+    });
+  }
+
+  // 創建基本權限
+  const permissions = [
+    { name: "VIEW_PROJECTS", description: "查看專案列表" },
+    { name: "CREATE_PROJECTS", description: "創建新專案" },
+    { name: "EDIT_PROJECTS", description: "編輯專案" },
+    { name: "DELETE_PROJECTS", description: "刪除專案" },
+    { name: "MANAGE_ROLES", description: "管理角色" },
+    { name: "VIEW_ROLES", description: "查看角色" },
+    { name: "VIEW_PERMISSIONS", description: "查看權限" },
+    { name: "ASSIGN_ROLES", description: "分配角色" },
+  ];
+
+  const createdPermissions = {};
+  for (const permission of permissions) {
+    createdPermissions[permission.name] = await prisma.permission.create({
+      data: permission,
+    });
+  }
+
+  // 為角色分配權限
+  // ADMIN 角色獲得所有權限
+  for (const permission of Object.values(createdPermissions)) {
+    await prisma.rolePermission.create({
+      data: {
+        roleId: createdRoles["ADMIN"].id,
+        permissionId: permission.id,
+      },
+    });
+  }
+
+  // POWERUSER 角色獲得專案相關權限
+  const powerUserPermissions = [
+    "VIEW_PROJECTS",
+    "CREATE_PROJECTS",
+    "EDIT_PROJECTS",
+  ];
+  for (const permName of powerUserPermissions) {
+    await prisma.rolePermission.create({
+      data: {
+        roleId: createdRoles["POWERUSER"].id,
+        permissionId: createdPermissions[permName].id,
+      },
+    });
+  }
+
+  // READER 角色只獲得查看權限
+  const readerPermissions = ["VIEW_PROJECTS"];
+  for (const permName of readerPermissions) {
+    await prisma.rolePermission.create({
+      data: {
+        roleId: createdRoles["READER"].id,
+        permissionId: createdPermissions[permName].id,
+      },
     });
   }
 
@@ -134,12 +191,88 @@ async function main() {
     createdUsers[user.username] = createdUser;
   }
 
+  // 創建系統代碼
+  const systemCodes = [
+    {
+      systemCode: "IYM",
+      systemName: "量測系統",
+      systemDescription: "In-line Yield Management System",
+      isEnabled: true,
+      createdBy: createdUsers["admin001"].id,
+      updatedBy: createdUsers["admin001"].id,
+    },
+    {
+      systemCode: "QAS",
+      systemName: "品質保證系統",
+      systemDescription: "Quality Assurance System",
+      isEnabled: true,
+      createdBy: createdUsers["admin001"].id,
+      updatedBy: createdUsers["admin001"].id,
+    },
+    {
+      systemCode: "FIN",
+      systemName: "財務系統",
+      systemDescription: "Finance System",
+      isEnabled: true,
+      createdBy: createdUsers["admin001"].id,
+      updatedBy: createdUsers["admin001"].id,
+    },
+    {
+      systemCode: "HRM",
+      systemName: "人資系統",
+      systemDescription: "Human Resource Management",
+      isEnabled: true,
+      createdBy: createdUsers["admin001"].id,
+      updatedBy: createdUsers["admin001"].id,
+    },
+    {
+      systemCode: "INV",
+      systemName: "庫存系統",
+      systemDescription: "Inventory System",
+      isEnabled: true,
+      createdBy: createdUsers["admin001"].id,
+      updatedBy: createdUsers["admin001"].id,
+    },
+    {
+      systemCode: "DOC",
+      systemName: "文件管理系統",
+      systemDescription: "Document Management System",
+      isEnabled: true,
+      createdBy: createdUsers["admin001"].id,
+      updatedBy: createdUsers["admin001"].id,
+    },
+    {
+      systemCode: "EQP",
+      systemName: "設備管理系統",
+      systemDescription: "Equipment Management System",
+      isEnabled: true,
+      createdBy: createdUsers["admin001"].id,
+      updatedBy: createdUsers["admin001"].id,
+    },
+    {
+      systemCode: "MFG",
+      systemName: "製造系統",
+      systemDescription: "Manufacturing System",
+      isEnabled: true,
+      createdBy: createdUsers["admin001"].id,
+      updatedBy: createdUsers["admin001"].id,
+    },
+  ];
+
+  for (const code of systemCodes) {
+    await prisma.systemCode.create({
+      data: code,
+    });
+  }
+
   // 創建測試專案
   const projects = [
     {
       name: "2024年Q1客訴分析專案",
       description: "分析第一季度客戶反饋，找出主要問題點並提出改善建議",
       status: "active",
+      systemCode: "IYM",
+      projectNumber: `IYM_${new Date().toISOString().replace(/[-:]/g, "").slice(0, 8)}_${Math.random().toString(36).substring(2, 7).toUpperCase()}`,
       createdBy: createdUsers["admin001"].id,
       updatedBy: createdUsers["admin001"].id,
     },
@@ -147,6 +280,8 @@ async function main() {
       name: "產品品質改善追蹤",
       description: "追蹤並分析產品品質相關的客訴案件",
       status: "active",
+      systemCode: "QAS",
+      projectNumber: `QAS_${new Date().toISOString().replace(/[-:]/g, "").slice(0, 8)}_${Math.random().toString(36).substring(2, 7).toUpperCase()}`,
       createdBy: createdUsers["power001"].id,
       updatedBy: createdUsers["power001"].id,
     },
@@ -154,6 +289,8 @@ async function main() {
       name: "客服回應時效分析",
       description: "分析客服團隊對客訴的回應時效",
       status: "active",
+      systemCode: "QAS",
+      projectNumber: `QAS_${new Date().toISOString().replace(/[-:]/g, "").slice(0, 8)}_${Math.random().toString(36).substring(2, 7).toUpperCase()}`,
       createdBy: createdUsers["power002"].id,
       updatedBy: createdUsers["admin002"].id,
     },
@@ -161,6 +298,8 @@ async function main() {
       name: "包裝改善專案",
       description: "基於客訴回饋優化產品包裝",
       status: "draft",
+      systemCode: "MFG",
+      projectNumber: `MFG_${new Date().toISOString().replace(/[-:]/g, "").slice(0, 8)}_${Math.random().toString(36).substring(2, 7).toUpperCase()}`,
       createdBy: createdUsers["power003"].id,
       updatedBy: createdUsers["power003"].id,
     },
@@ -168,6 +307,8 @@ async function main() {
       name: "運送品質監控",
       description: "監控並分析運送過程中的產品損壞案例",
       status: "active",
+      systemCode: "QAS",
+      projectNumber: `QAS_${new Date().toISOString().replace(/[-:]/g, "").slice(0, 8)}_${Math.random().toString(36).substring(2, 7).toUpperCase()}`,
       createdBy: createdUsers["admin002"].id,
       updatedBy: createdUsers["power001"].id,
     },
@@ -175,6 +316,8 @@ async function main() {
       name: "新產品客訴追蹤",
       description: "追蹤新產品上市後的客戶反饋",
       status: "draft",
+      systemCode: "QAS",
+      projectNumber: `QAS_${new Date().toISOString().replace(/[-:]/g, "").slice(0, 8)}_${Math.random().toString(36).substring(2, 7).toUpperCase()}`,
       createdBy: createdUsers["power001"].id,
       updatedBy: createdUsers["power001"].id,
     },
@@ -182,6 +325,8 @@ async function main() {
       name: "客訴處理SOP優化",
       description: "根據客訴處理數據優化標準作業流程",
       status: "completed",
+      systemCode: "DOC",
+      projectNumber: `DOC_${new Date().toISOString().replace(/[-:]/g, "").slice(0, 8)}_${Math.random().toString(36).substring(2, 7).toUpperCase()}`,
       createdBy: createdUsers["admin001"].id,
       updatedBy: createdUsers["admin001"].id,
     },
@@ -189,6 +334,8 @@ async function main() {
       name: "跨部門協作效率分析",
       description: "分析客訴處理過程中的跨部門協作效率",
       status: "active",
+      systemCode: "HRM",
+      projectNumber: `HRM_${new Date().toISOString().replace(/[-:]/g, "").slice(0, 8)}_${Math.random().toString(36).substring(2, 7).toUpperCase()}`,
       createdBy: createdUsers["power002"].id,
       updatedBy: createdUsers["power002"].id,
     },
@@ -196,6 +343,8 @@ async function main() {
       name: "客戶滿意度改善計劃",
       description: "基於客訴分析制定客戶滿意度改善方案",
       status: "draft",
+      systemCode: "QAS",
+      projectNumber: `QAS_${new Date().toISOString().replace(/[-:]/g, "").slice(0, 8)}_${Math.random().toString(36).substring(2, 7).toUpperCase()}`,
       createdBy: createdUsers["admin002"].id,
       updatedBy: createdUsers["power003"].id,
     },
@@ -203,6 +352,8 @@ async function main() {
       name: "2023年度客訴報告",
       description: "彙整2023年度所有客訴數據並生成分析報告",
       status: "completed",
+      systemCode: "DOC",
+      projectNumber: `DOC_${new Date().toISOString().replace(/[-:]/g, "").slice(0, 8)}_${Math.random().toString(36).substring(2, 7).toUpperCase()}`,
       createdBy: createdUsers["admin001"].id,
       updatedBy: createdUsers["admin001"].id,
     },
