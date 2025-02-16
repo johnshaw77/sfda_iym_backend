@@ -277,8 +277,6 @@ router.put(
  *     tags: [認證]
  *     summary: 用戶登出
  *     description: 登出當前用戶
- *     security:
- *       - bearerAuth: []
  *     responses:
  *       200:
  *         description: 登出成功
@@ -289,9 +287,7 @@ router.put(
  *               properties:
  *                 message:
  *                   type: string
- *       401:
- *         description: 未提供認證令牌或令牌無效
  */
-router.post("/logout", authenticateToken, authController.logout);
+router.post("/logout", authController.logout);
 
 module.exports = router;

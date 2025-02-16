@@ -1,8 +1,7 @@
 # SFDA IYM 後端專案
 
-## 專案簡介
-
-SFDA IYM（Improve Your Manufacturing）後端服務，採用 Node.js + Express.js 開發，提供完整的 RESTful API 支持，包含用戶認證、檔案管理、數據分析等功能。
+## 專案說明
+SFDA IYM（良率分析平台）後端服務，使用 Node.js + Express + Prisma 開發，提供 RESTful API 服務。
 
 ## 已完成功能
 
@@ -101,8 +100,8 @@ SFDA IYM（Improve Your Manufacturing）後端服務，採用 Node.js + Express.
 
 ## 技術棧
 
-- **核心框架：** Node.js 18.x + Express.js 4.18.2
-- **資料庫：** SQLite + Prisma ORM 5.10.2
+- **核心框架：** Node.js 16.0.0 + Express 4.18.2 + Prisma ORM 5.10.2
+- **資料庫：** PostgreSQL 14.0
 - **認證：** JWT + bcrypt
 - **檔案處理：** Multer 1.4.5 + Sharp 0.33.2
 - **API文檔：** Swagger UI Express 5.0.0
@@ -159,42 +158,32 @@ backend/
 
 ## 開發指南
 
-### 環境要求
-- Node.js >= 18.0.0
-- npm >= 9.0.0
-- SQLite >= 3.0.0
+### 開發環境要求
+- Node.js >= 16.0.0
+- npm >= 7.0.0
+- PostgreSQL >= 14.0
 
-### 安裝步驟
-
-1. 安裝依賴
+### 安裝與運行
 ```bash
+# 安裝依賴
 npm install
-```
 
-2. 環境配置
-```bash
-cp .env.example .env
-```
-
-3. 資料庫初始化
-```bash
+# 初始化數據庫
 npx prisma migrate dev
-npx prisma db seed
-```
 
-4. 啟動服務
-```bash
-# 開發環境
+# 開發環境運行
 npm run dev
 
-# 生產環境
-npm run build
+# 生產環境運行
 npm start
+
+# 運行測試
+npm test
 ```
 
 ## API 文檔
 
-訪問 `http://localhost:3000/api-docs` 查看完整 API 文檔。
+啟動服務後訪問：`http://localhost:3001/api-docs`
 
 ## 更新日誌
 
@@ -276,4 +265,47 @@ npm start
 
 ## 授權說明
 
-本專案為私有軟體，未經授權不得使用、複製或分發。 
+本專案為私有軟體，未經授權不得使用、複製或分發。
+
+## 最新更新
+- 優化認證系統
+- 改進登出機制
+- 移除不必要的認證要求
+- 優化錯誤處理
+- 改進用戶會話管理
+
+## 開發規範
+- 使用 ESLint 進行代碼檢查
+- 遵循 RESTful API 設計規範
+- 使用 async/await 處理異步
+- 統一錯誤處理
+- 完整的日誌記錄
+
+## 環境變數
+```env
+# 應用配置
+PORT=3001
+NODE_ENV=development
+
+# 數據庫配置
+DATABASE_URL="postgresql://user:password@localhost:5432/sfda_iym"
+
+# JWT 配置
+JWT_SECRET=your_jwt_secret
+JWT_EXPIRES_IN=1d
+JWT_REMEMBER_EXPIRES_IN=7d
+
+# 文件上傳配置
+UPLOAD_DIR=uploads
+MAX_FILE_SIZE=5242880
+```
+
+## 貢獻指南
+1. Fork 本專案
+2. 創建特性分支
+3. 提交變更
+4. 推送到分支
+5. 創建 Pull Request
+
+## 授權
+本專案採用 MIT 授權條款 

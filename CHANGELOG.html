@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SFDA IYM 後端更新日誌</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .version {
+            border-bottom: 2px solid #eee;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+        }
+        .version-header {
+            color: #1976D2;
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+        }
+        .version-number {
+            font-size: 1.5em;
+            font-weight: bold;
+        }
+        .version-date {
+            color: #666;
+        }
+        .change-type {
+            margin: 15px 0;
+            font-weight: 500;
+        }
+        .change-list {
+            margin: 0;
+            padding-left: 20px;
+        }
+        .change-item {
+            margin: 5px 0;
+        }
+        .tag {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.8em;
+            margin-right: 8px;
+        }
+        .tag-feature { background: #E3F2FD; color: #1976D2; }
+        .tag-fix { background: #FFEBEE; color: #D32F2F; }
+        .tag-improvement { background: #E8F5E9; color: #388E3C; }
+        .tag-security { background: #FFF3E0; color: #E65100; }
+    </style>
+</head>
+<body>
+    <h1>SFDA IYM 後端更新日誌</h1>
+
+    <div class="version">
+        <div class="version-header">
+            <span class="version-number">v1.4.0</span>
+            <span class="version-date">2024-03-25</span>
+        </div>
+        
+        <div class="change-type">🔐 認證系統優化</div>
+        <ul class="change-list">
+            <li class="change-item">
+                <span class="tag tag-security">安全性</span>
+                移除登出路由的認證要求
+            </li>
+            <li class="change-item">
+                <span class="tag tag-improvement">改進</span>
+                優化 JWT token 處理機制
+            </li>
+            <li class="change-item">
+                <span class="tag tag-feature">新增</span>
+                添加「記住我」功能的 token 過期時間配置
+            </li>
+        </ul>
+
+        <div class="change-type">🛠️ API 改進</div>
+        <ul class="change-list">
+            <li class="change-item">
+                <span class="tag tag-improvement">改進</span>
+                優化錯誤處理中間件
+            </li>
+            <li class="change-item">
+                <span class="tag tag-improvement">改進</span>
+                改進請求驗證機制
+            </li>
+        </ul>
+
+        <div class="change-type">📝 文檔更新</div>
+        <ul class="change-list">
+            <li class="change-item">
+                <span class="tag tag-feature">新增</span>
+                更新 Swagger API 文檔
+            </li>
+            <li class="change-item">
+                <span class="tag tag-improvement">改進</span>
+                完善錯誤碼說明
+            </li>
+        </ul>
+    </div>
+
+    <div class="version">
+        <div class="version-header">
+            <span class="version-number">v1.3.1</span>
+            <span class="version-date">2024-03-22</span>
+        </div>
+        
+        <div class="change-type">📁 文件處理優化</div>
+        <ul class="change-list">
+            <li class="change-item">
+                <span class="tag tag-improvement">改進</span>
+                優化文件上傳處理邏輯
+            </li>
+            <li class="change-item">
+                <span class="tag tag-security">安全性</span>
+                加強文件類型驗證
+            </li>
+        </ul>
+
+        <div class="change-type">🐛 問題修復</div>
+        <ul class="change-list">
+            <li class="change-item">
+                <span class="tag tag-fix">修復</span>
+                修正文件刪除時的權限檢查
+            </li>
+            <li class="change-item">
+                <span class="tag tag-fix">修復</span>
+                修正大檔案上傳的記憶體問題
+            </li>
+        </ul>
+    </div>
+</body>
+</html> 
