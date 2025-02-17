@@ -4,15 +4,53 @@ const prisma = new PrismaClient();
 
 async function main() {
   // 清理現有數據（注意順序以避免外鍵約束問題）
+  console.log("開始清理現有數據...");
+
+  // 1. 刪除工作流程實例相關
+  await prisma.nodeInstanceConnection.deleteMany();
+  await prisma.nodeInstance.deleteMany();
+  await prisma.workflowInstance.deleteMany();
+
+  // 2. 刪除工作流程範本相關
+  await prisma.nodeTemplateConnection.deleteMany();
+  await prisma.nodeTemplate.deleteMany();
+  await prisma.workflowTemplate.deleteMany();
+
+  // 3. 刪除檔案和日誌相關
+  await prisma.fileNode.deleteMany();
+  await prisma.apiLog.deleteMany();
+  await prisma.file.deleteMany();
+
+  // 4. 刪除資料快照
+  await prisma.dataSnapshot.deleteMany();
+
+  // 5. 刪除工作流程
+  await prisma.workflow.deleteMany();
+
+  // 6. 刪除專案和系統代碼
   await prisma.project.deleteMany();
   await prisma.systemCode.deleteMany();
+
+  // 7. 刪除節點定義
+  await prisma.nodeDefinition.deleteMany();
+
+  // 8. 刪除角色權限關聯
+  await prisma.rolePermission.deleteMany();
   await prisma.userRole.deleteMany();
+
+  // 9. 刪除權限和角色
+  await prisma.permission.deleteMany();
   await prisma.role.deleteMany();
+
+  // 10. 最後刪除用戶
   await prisma.user.deleteMany();
-  await prisma.nodeType.deleteMany();
+
+  console.log("數據清理完成");
 
   // 創建基本角色
+  console.log("開始創建基本角色...");
   const roles = [
+    { name: "SUPERADMIN", description: "超級管理員，擁有所有權限且不受限制" },
     { name: "ADMIN", description: "系統管理員，擁有所有權限" },
     { name: "POWERUSER", description: "進階用戶，可以創建和管理工作流程" },
     { name: "READER", description: "一般用戶，只能查看和執行工作流程" },
@@ -35,6 +73,9 @@ async function main() {
     { name: "VIEW_ROLES", description: "查看角色" },
     { name: "VIEW_PERMISSIONS", description: "查看權限" },
     { name: "ASSIGN_ROLES", description: "分配角色" },
+    { name: "VIEW_NODE_DEFINITIONS", description: "查看節點定義" },
+    { name: "MANAGE_NODE_DEFINITIONS", description: "管理節點定義" },
+    { name: "SYSTEM_ADMIN", description: "系統管理權限" },
   ];
 
   const createdPermissions = {};
@@ -44,7 +85,16 @@ async function main() {
     });
   }
 
-  // 為角色分配權限
+  // SUPERADMIN 角色獲得所有權限
+  for (const permission of Object.values(createdPermissions)) {
+    await prisma.rolePermission.create({
+      data: {
+        roleId: createdRoles["SUPERADMIN"].id,
+        permissionId: permission.id,
+      },
+    });
+  }
+
   // ADMIN 角色獲得所有權限
   for (const permission of Object.values(createdPermissions)) {
     await prisma.rolePermission.create({
@@ -60,6 +110,8 @@ async function main() {
     "VIEW_PROJECTS",
     "CREATE_PROJECTS",
     "EDIT_PROJECTS",
+    "VIEW_NODE_DEFINITIONS",
+    "MANAGE_NODE_DEFINITIONS",
   ];
   for (const permName of powerUserPermissions) {
     await prisma.rolePermission.create({
@@ -71,7 +123,7 @@ async function main() {
   }
 
   // READER 角色只獲得查看權限
-  const readerPermissions = ["VIEW_PROJECTS"];
+  const readerPermissions = ["VIEW_PROJECTS", "VIEW_NODE_DEFINITIONS"];
   for (const permName of readerPermissions) {
     await prisma.rolePermission.create({
       data: {
@@ -87,7 +139,7 @@ async function main() {
       username: "蕭傳璋",
       email: "john_hsiao@example.com",
       password: await bcrypt.hash("888888", 10),
-      role: "ADMIN",
+      role: "SUPERADMIN",
       avatar: "👨‍💼",
       isActive: true,
     },
@@ -365,14 +417,15 @@ async function main() {
     });
   }
 
-  // 建立基礎節點類型
-  const nodeTypes = [
+  // 建立基礎節點定義
+  const nodeDefinitions = [
     {
-      typeKey: "complaint_selector",
+      typeKey: "complaint-selector",
       category: "input",
-      nodeName: "客訴選擇器",
+      name: "客訴選擇器",
       description: "用於選擇要分析的客訴案件",
       componentName: "ComplaintSelector",
+      version: "1.0.0",
       defaultConfig: JSON.stringify({
         multiple: false,
         dateRange: true,
@@ -437,13 +490,27 @@ async function main() {
         },
       }),
       icon: "📋",
+      uiConfig: {
+        style: {
+          backgroundColor: "#ffffff",
+          borderColor: "#64748b",
+        },
+      },
+      validationRules: {
+        required: true,
+      },
+      handles: {
+        inputs: [],
+        outputs: ["data"],
+      },
     },
     {
-      typeKey: "data_analyzer",
+      typeKey: "data-analyzer",
       category: "process",
-      nodeName: "數據分析器",
+      name: "數據分析器",
       description: "分析客訴數據，生成統計報告",
       componentName: "DataAnalyzer",
+      version: "1.0.0",
       defaultConfig: JSON.stringify({
         analysisTypes: ["trend", "category", "priority"],
         visualization: true,
@@ -484,13 +551,27 @@ async function main() {
         },
       }),
       icon: "📊",
+      uiConfig: {
+        style: {
+          backgroundColor: "#ffffff",
+          borderColor: "#64748b",
+        },
+      },
+      validationRules: {
+        required: true,
+      },
+      handles: {
+        inputs: ["data"],
+        outputs: ["result"],
+      },
     },
     {
-      typeKey: "report_generator",
+      typeKey: "report-generator",
       category: "output",
-      nodeName: "報表生成器",
+      name: "報表生成器",
       description: "根據分析結果生成報表",
       componentName: "ReportGenerator",
+      version: "1.0.0",
       defaultConfig: JSON.stringify({
         template: "default",
         format: "pdf",
@@ -524,13 +605,33 @@ async function main() {
         },
       }),
       icon: "📑",
+      uiConfig: {
+        style: {
+          backgroundColor: "#ffffff",
+          borderColor: "#64748b",
+        },
+      },
+      validationRules: {
+        required: true,
+      },
+      handles: {
+        inputs: ["result"],
+        outputs: [],
+      },
     },
   ];
 
-  // 插入節點類型
-  for (const nodeType of nodeTypes) {
-    await prisma.nodeType.create({
-      data: nodeType,
+  // 插入節點定義
+  for (const nodeDef of nodeDefinitions) {
+    await prisma.nodeDefinition.create({
+      data: {
+        ...nodeDef,
+        uiConfig: nodeDef.uiConfig ? JSON.stringify(nodeDef.uiConfig) : "{}",
+        validationRules: nodeDef.validationRules
+          ? JSON.stringify(nodeDef.validationRules)
+          : "{}",
+        handles: nodeDef.handles ? JSON.stringify(nodeDef.handles) : "{}",
+      },
     });
   }
 

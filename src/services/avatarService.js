@@ -38,7 +38,6 @@ class AvatarService {
         username: true,
         email: true,
         avatar: true,
-        role: true,
         updatedAt: true,
       },
     });

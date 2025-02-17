@@ -173,10 +173,12 @@ exports.login = async (req, res) => {
     };
 
     res.json({
-      message: "登入成功",
-      token,
-      user: userData,
-      expiresIn,
+      data: {
+        message: "登入成功",
+        token,
+        user: userData,
+        expiresIn,
+      },
     });
   } catch (error) {
     console.error("登入錯誤:", error);
@@ -188,12 +190,13 @@ exports.login = async (req, res) => {
 exports.getCurrentUser = async (req, res) => {
   try {
     const user = await prisma.user.findUnique({
-      where: { id: req.user.id },
+      where: {
+        id: req.user.id,
+      },
       select: {
         id: true,
         username: true,
         email: true,
-        role: true,
         avatar: true,
         createdAt: true,
         userRoles: {
@@ -234,7 +237,9 @@ exports.getCurrentUser = async (req, res) => {
     };
     delete userWithPermissions.userRoles;
 
-    res.json(userWithPermissions);
+    res.json({
+      data: userWithPermissions,
+    });
   } catch (error) {
     console.error("獲取用戶信息錯誤:", error);
     res.status(500).json({ message: "伺服器錯誤" });

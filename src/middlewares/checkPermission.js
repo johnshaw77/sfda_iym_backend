@@ -13,18 +13,31 @@ const checkPermission = (requiredPermissions, requireAll = false) => {
     try {
       const userId = req.user.id;
 
-      // 檢查是否為超級管理員或管理員
-      if (req.user.role === "SUPER_ADMIN" || req.user.role === "ADMIN") {
+      // 獲取用戶的所有角色和權限
+      const userRoles = await prisma.userRole.findMany({
+        where: { userId },
+        include: {
+          role: true,
+        },
+      });
+
+      // 檢查是否為管理員
+      const isAdmin = userRoles.some(
+        (userRole) =>
+          userRole.role.name === "ADMIN" || userRole.role.name === "SUPERADMIN"
+      );
+      console.log("================ isAdmin ================", isAdmin);
+      if (isAdmin) {
         logger.info("管理員權限檢查通過", {
           userId,
-          role: req.user.role,
+          roles: userRoles.map((ur) => ur.role.name),
           requiredPermissions,
         });
         return next();
       }
 
-      // 獲取用戶的所有角色和權限
-      const userRoles = await prisma.userRole.findMany({
+      // 獲取用戶的所有權限
+      const userRolesWithPermissions = await prisma.userRole.findMany({
         where: { userId },
         include: {
           role: {
@@ -41,7 +54,7 @@ const checkPermission = (requiredPermissions, requireAll = false) => {
 
       // 提取用戶的所有權限
       const userPermissions = new Set();
-      userRoles.forEach((userRole) => {
+      userRolesWithPermissions.forEach((userRole) => {
         userRole.role.rolePermissions.forEach((rolePermission) => {
           userPermissions.add(rolePermission.permission.name);
         });

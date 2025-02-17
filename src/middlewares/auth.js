@@ -72,8 +72,10 @@ exports.authorizeAdmin = async (req, res, next) => {
   try {
     const user = req.user;
 
-    // 檢查是否為管理員
-    const isAdmin = user.userRoles.some((ur) => ur.role.name === "ADMIN");
+    // 檢查是否為管理員或超級管理員
+    const isAdmin = user.userRoles.some(
+      (ur) => ur.role.name === "ADMIN" || ur.role.name === "SUPERADMIN"
+    );
 
     if (!isAdmin) {
       throw new AppError("需要管理員權限", 403);
@@ -98,7 +100,9 @@ exports.authorize = (requiredPermissions, options = {}) => {
   return async (req, res, next) => {
     try {
       const userPermissions = req.userPermissions;
-      const isAdmin = req.user.userRoles.some((ur) => ur.role.name === "ADMIN");
+      const isAdmin = req.user.userRoles.some(
+        (ur) => ur.role.name === "ADMIN" || ur.role.name === "SUPERADMIN"
+      );
 
       // 如果是管理員且允許管理員繞過權限檢查
       if (allowAdmin && isAdmin) {
@@ -144,7 +148,9 @@ exports.authorizeOwnerOrAdmin = (paramName, model, options = {}) => {
     try {
       const resourceId = req.params[paramName];
       const userId = req.user.id;
-      const isAdmin = req.user.userRoles.some((ur) => ur.role.name === "ADMIN");
+      const isAdmin = req.user.userRoles.some(
+        (ur) => ur.role.name === "ADMIN" || ur.role.name === "SUPERADMIN"
+      );
 
       // 檢查資源是否存在
       const resource = await prisma[model].findUnique({
