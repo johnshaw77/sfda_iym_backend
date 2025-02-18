@@ -3,6 +3,167 @@ const bcrypt = require("bcryptjs");
 const nodeDefinitions = require("./seeds/nodeDefinitions");
 const prisma = new PrismaClient();
 
+async function createWorkflowTemplates(prisma, createdUsers) {
+  console.log("開始創建工作流程範本...");
+
+  const templateCategories = [
+    "品質管理",
+    "生產管理",
+    "設備管理",
+    "人力資源",
+    "供應鏈管理",
+  ];
+
+  const templateNames = [
+    "客訴處理流程",
+    "品質檢驗流程",
+    "生產計劃審核",
+    "設備維護流程",
+    "物料申請流程",
+    "人員培訓流程",
+    "產品研發流程",
+    "供應商評估",
+    "庫存盤點流程",
+    "出貨檢驗流程",
+    "設備校準流程",
+    "文件審核流程",
+    "安全檢查流程",
+    "環境監測流程",
+    "產品追溯流程",
+    "客戶回饋處理",
+    "生產異常處理",
+    "品質改善計劃",
+    "設備保養計劃",
+    "工程變更流程",
+  ];
+
+  const templateDescriptions = [
+    "處理客戶投訴和意見回饋的標準流程",
+    "產品品質檢驗和測試的標準作業程序",
+    "生產計劃的審核和核准流程",
+    "設備定期維護和檢查的標準流程",
+    "物料申請和審批的標準作業程序",
+    "員工培訓和技能提升的標準流程",
+    "新產品研發和測試的標準流程",
+    "供應商選擇和評估的標準程序",
+    "定期庫存盤點的標準作業流程",
+    "產品出貨前的品質檢驗流程",
+    "設備定期校準的標準作業程序",
+    "文件審核和核准的標準流程",
+    "工作場所安全檢查的標準程序",
+    "環境參數監測的標準作業流程",
+    "產品生產過程追溯的標準程序",
+    "客戶意見收集和處理的流程",
+    "生產異常情況處理的標準程序",
+    "品質持續改善計劃的執行流程",
+    "設備定期保養的標準作業程序",
+    "工程變更管理的標準流程",
+  ];
+
+  const statuses = ["DRAFT", "PUBLISHED", "ARCHIVED"];
+  const versions = ["1.0.0", "1.0.1", "1.1.0", "2.0.0"];
+
+  for (let i = 0; i < templateNames.length; i++) {
+    const randomUser =
+      Object.values(createdUsers)[
+        Math.floor(Math.random() * Object.values(createdUsers).length)
+      ];
+
+    // 創建工作流程範本
+    const template = await prisma.workflowTemplate.create({
+      data: {
+        templateName: templateNames[i],
+        description: templateDescriptions[i],
+        templateCategory: templateCategories[Math.floor(i / 4)],
+        version: versions[Math.floor(Math.random() * versions.length)],
+        status: statuses[Math.floor(Math.random() * statuses.length)],
+        config: JSON.stringify({
+          layout: "horizontal",
+          theme: "light",
+          snapToGrid: true,
+          gridSize: 20,
+        }),
+        creator: {
+          connect: {
+            id: randomUser.id,
+          },
+        },
+      },
+    });
+
+    // 創建節點範本
+    const nodes = [
+      {
+        type: "complaint-selector",
+        position: { x: 100, y: 100 },
+        data: { label: "選擇客訴單號" },
+        nodeName: "客訴單號選擇器",
+      },
+      {
+        type: "defect-item-selector",
+        position: { x: 300, y: 100 },
+        data: { label: "選擇不良品項" },
+        nodeName: "不良品項選擇",
+      },
+      {
+        type: "basic-statistics",
+        position: { x: 500, y: 100 },
+        data: { label: "基礎統計分析" },
+        nodeName: "統計分析",
+      },
+    ];
+
+    const createdNodes = [];
+    for (const node of nodes) {
+      const nodeTemplate = await prisma.nodeTemplate.create({
+        data: {
+          positionX: node.position.x,
+          positionY: node.position.y,
+          config: JSON.stringify(node.data),
+          nodeName: node.nodeName,
+          workflowTemplate: {
+            connect: {
+              id: template.id,
+            },
+          },
+          nodeType: {
+            connect: {
+              definitionKey: node.type,
+            },
+          },
+        },
+      });
+      createdNodes.push(nodeTemplate);
+    }
+
+    // 創建節點連接
+    for (let j = 0; j < createdNodes.length - 1; j++) {
+      await prisma.nodeTemplateConnection.create({
+        data: {
+          edgeType: "default",
+          workflowTemplate: {
+            connect: {
+              id: template.id,
+            },
+          },
+          sourceNode: {
+            connect: {
+              id: createdNodes[j].id,
+            },
+          },
+          targetNode: {
+            connect: {
+              id: createdNodes[j + 1].id,
+            },
+          },
+        },
+      });
+    }
+
+    console.log(`已創建工作流程範本: ${template.templateName}`);
+  }
+}
+
 async function main() {
   // 清理現有數據（注意順序以避免外鍵約束問題）
   console.log("開始清理現有數據...");
@@ -427,7 +588,10 @@ async function main() {
   }
   console.log("節點定義創建完成");
 
-  console.log("資料庫種子資料創建完成");
+  // 在創建完用戶後，添加工作流程範本
+  await createWorkflowTemplates(prisma, createdUsers);
+
+  console.log("所有數據填充完成");
 }
 
 main()
