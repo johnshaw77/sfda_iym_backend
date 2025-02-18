@@ -24,35 +24,89 @@ const successResponse = (res, status, data) => {
 const validateNodeDefinition = (data) => {
   const errors = [];
 
-  // 驗證 typeKey
-  if (!data.typeKey) {
-    errors.push("typeKey 為必填欄位");
+  // 驗證 definitionKey
+  if (!data.definitionKey) {
+    errors.push("definitionKey 為必填欄位");
   } else {
-    if (data.typeKey.length < 5 || data.typeKey.length > 15) {
-      errors.push("typeKey 長度必須在 5 到 15 個字元之間");
+    if (data.definitionKey.length < 5 || data.definitionKey.length > 15) {
+      errors.push("definitionKey 長度必須在 5 到 15 個字元之間");
     }
-    if (!/^[a-z0-9-]+$/.test(data.typeKey)) {
-      errors.push("typeKey 只能包含小寫英文字母、數字和連字符號");
+    if (!/^[a-z][a-z0-9-]*$/.test(data.definitionKey)) {
+      errors.push(
+        "definitionKey 必須以小寫字母開頭，只能包含小寫字母、數字和連字符號"
+      );
+    }
+    if (data.definitionKey.includes("--")) {
+      errors.push("definitionKey 不能包含連續的連字符號");
     }
   }
 
-  // 驗證必填欄位
+  // 驗證 name
   if (!data.name) {
     errors.push("name 為必填欄位");
+  } else if (data.name.length < 2 || data.name.length > 50) {
+    errors.push("name 長度必須在 2 到 50 個字元之間");
   }
+
+  // 驗證 category
   if (!data.category) {
     errors.push("category 為必填欄位");
+  } else {
+    const validCategories = [
+      "business-input",
+      "business-process",
+      "statistical-analysis",
+    ];
+    if (!validCategories.includes(data.category)) {
+      errors.push("無效的節點分類");
+    }
+  }
+
+  // 驗證 nodeType
+  if (!data.nodeType) {
+    errors.push("nodeType 為必填欄位");
+  } else {
+    const validNodeTypes = [
+      "custom-input",
+      "custom-process",
+      "statistic-process",
+    ];
+    if (!validNodeTypes.includes(data.nodeType)) {
+      errors.push(
+        "nodeType 必須是 custom-input、custom-process 或 statistic-process"
+      );
+    }
+  }
+
+  // 驗證 description
+  if (!data.description) {
+    errors.push("description 為必填欄位");
+  } else if (data.description.length < 2 || data.description.length > 200) {
+    errors.push("description 長度必須在 2 到 200 個字元之間");
+  } else if (data.description.trim().length === 0) {
+    errors.push("description 不能只包含空白字符");
+  }
+
+  // 根據 nodeType 驗證必填欄位
+  if (data.nodeType === "custom-input" && !data.componentName) {
+    errors.push("custom-input 類型必須指定 componentName");
   }
 
   // 驗證 API 相關欄位
-  if (data.apiEndpoint && !data.apiMethod) {
-    errors.push("當提供 apiEndpoint 時，apiMethod 為必填");
+  if (["custom-process", "statistic-process"].includes(data.nodeType)) {
+    if (!data.apiEndpoint) {
+      errors.push("處理類型節點必須指定 API 端點");
+    } else if (!data.apiEndpoint.startsWith("/")) {
+      errors.push("API 端點必須以 / 開頭");
+    }
   }
-  if (
-    data.apiMethod &&
-    !["GET", "POST", "PUT", "DELETE"].includes(data.apiMethod)
-  ) {
-    errors.push("apiMethod 必須是 GET、POST、PUT 或 DELETE");
+
+  if (data.apiEndpoint) {
+    if (!data.apiMethod) {
+      errors.push("當提供 apiEndpoint 時，apiMethod 為必填");
+    } else if (!["GET", "POST", "PUT", "DELETE"].includes(data.apiMethod)) {
+      errors.push("apiMethod 必須是 GET、POST、PUT 或 DELETE");
+    }
   }
 
   return errors;
@@ -78,14 +132,14 @@ exports.getNodeDefinitions = async (req, res) => {
 // 獲取單個節點定義
 exports.getNodeDefinition = async (req, res) => {
   try {
-    const { typeKey } = req.params;
+    const { definitionKey } = req.params;
     const nodeDefinition = await prisma.nodeDefinition.findUnique({
-      where: { typeKey },
+      where: { definitionKey },
     });
 
     if (!nodeDefinition) {
       return errorResponse(res, 404, "節點定義不存在", {
-        typeKey,
+        definitionKey,
       });
     }
 
@@ -94,7 +148,7 @@ exports.getNodeDefinition = async (req, res) => {
     console.error("獲取節點定義失敗:", error);
     return errorResponse(res, 500, "獲取節點定義失敗", {
       detail: error.message,
-      typeKey: req.params.typeKey,
+      definitionKey: req.params.definitionKey,
     });
   }
 };
@@ -103,7 +157,8 @@ exports.getNodeDefinition = async (req, res) => {
 exports.createNodeDefinition = async (req, res) => {
   try {
     const {
-      typeKey,
+      definitionKey,
+      nodeType,
       name,
       category,
       description,
@@ -111,8 +166,9 @@ exports.createNodeDefinition = async (req, res) => {
       componentName,
       apiEndpoint,
       apiMethod,
+      config,
       uiConfig,
-      validationRules,
+      validation,
       handles,
     } = req.body;
 
@@ -122,20 +178,22 @@ exports.createNodeDefinition = async (req, res) => {
       return errorResponse(res, 400, "驗證失敗", validationErrors);
     }
 
-    // 檢查 typeKey 是否已存在
+    // 檢查 definitionKey 是否已存在
     const existing = await prisma.nodeDefinition.findUnique({
-      where: { typeKey },
+      where: { definitionKey },
     });
 
     if (existing) {
       return errorResponse(res, 400, "節點定義鍵值已存在", {
-        typeKey,
+        definitionKey,
       });
     }
 
+    // 確保 JSON 字串格式
     const nodeDefinition = await prisma.nodeDefinition.create({
       data: {
-        typeKey,
+        definitionKey,
+        nodeType,
         name,
         category,
         description,
@@ -143,9 +201,10 @@ exports.createNodeDefinition = async (req, res) => {
         componentName,
         apiEndpoint,
         apiMethod,
-        uiConfig: uiConfig || {},
-        validationRules: validationRules || { required: false },
-        handles: handles || { inputs: [], outputs: [] },
+        config: config ? JSON.stringify(config) : "{}",
+        uiConfig: uiConfig ? JSON.stringify(uiConfig) : "{}",
+        validation: validation ? JSON.stringify(validation) : "{}",
+        handles: handles ? JSON.stringify(handles) : "{}",
       },
     });
 
@@ -162,8 +221,9 @@ exports.createNodeDefinition = async (req, res) => {
 // 更新節點定義
 exports.updateNodeDefinition = async (req, res) => {
   try {
-    const { typeKey } = req.params;
+    const { definitionKey } = req.params;
     const {
+      nodeType,
       name,
       category,
       description,
@@ -171,20 +231,25 @@ exports.updateNodeDefinition = async (req, res) => {
       componentName,
       apiEndpoint,
       apiMethod,
+      config,
       uiConfig,
-      validationRules,
+      validation,
       handles,
     } = req.body;
 
     // 驗證欄位
-    const validationErrors = validateNodeDefinition({ typeKey, ...req.body });
+    const validationErrors = validateNodeDefinition({
+      definitionKey,
+      ...req.body,
+    });
     if (validationErrors.length > 0) {
       return errorResponse(res, 400, "驗證失敗", validationErrors);
     }
 
     const nodeDefinition = await prisma.nodeDefinition.update({
-      where: { typeKey },
+      where: { definitionKey },
       data: {
+        nodeType,
         name,
         category,
         description,
@@ -192,9 +257,10 @@ exports.updateNodeDefinition = async (req, res) => {
         componentName,
         apiEndpoint,
         apiMethod,
-        uiConfig: uiConfig || {},
-        validationRules: validationRules || { required: false },
-        handles: handles || { inputs: [], outputs: [] },
+        config: config ? JSON.stringify(config) : undefined,
+        uiConfig: uiConfig ? JSON.stringify(uiConfig) : undefined,
+        validation: validation ? JSON.stringify(validation) : undefined,
+        handles: handles ? JSON.stringify(handles) : undefined,
       },
     });
 
@@ -202,13 +268,13 @@ exports.updateNodeDefinition = async (req, res) => {
   } catch (error) {
     if (error.code === "P2025") {
       return errorResponse(res, 404, "節點定義不存在", {
-        typeKey: req.params.typeKey,
+        definitionKey: req.params.definitionKey,
       });
     }
     console.error("更新節點定義失敗:", error);
     return errorResponse(res, 500, "更新節點定義失敗", {
       detail: error.message,
-      typeKey: req.params.typeKey,
+      definitionKey: req.params.definitionKey,
       data: req.body,
     });
   }
@@ -217,23 +283,26 @@ exports.updateNodeDefinition = async (req, res) => {
 // 刪除節點定義
 exports.deleteNodeDefinition = async (req, res) => {
   try {
-    const { typeKey } = req.params;
+    const { definitionKey } = req.params;
 
     const result = await prisma.nodeDefinition.delete({
-      where: { typeKey },
+      where: { definitionKey },
     });
 
-    return successResponse(res, 200, { typeKey, message: "節點定義已刪除" });
+    return successResponse(res, 200, {
+      definitionKey,
+      message: "節點定義已刪除",
+    });
   } catch (error) {
     if (error.code === "P2025") {
       return errorResponse(res, 404, "節點定義不存在", {
-        typeKey: req.params.typeKey,
+        definitionKey: req.params.definitionKey,
       });
     }
     console.error("刪除節點定義失敗:", error);
     return errorResponse(res, 500, "刪除節點定義失敗", {
       detail: error.message,
-      typeKey: req.params.typeKey,
+      definitionKey: req.params.definitionKey,
     });
   }
 };

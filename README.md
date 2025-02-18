@@ -1,4 +1,6 @@
-# SFDA IYM 後端專案
+# SFDA (Statistical Flow-based Data Analysis) Backend
+
+這是一個基於 FastAPI 的統計分析工作流程系統後端專案。
 
 ## 專案說明
 SFDA IYM（良率分析平台）後端服務，使用 Node.js + Express + Prisma 開發，提供 RESTful API 服務。

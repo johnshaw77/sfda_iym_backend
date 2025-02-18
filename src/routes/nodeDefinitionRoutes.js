@@ -11,14 +11,20 @@ const checkPermission = require("../middlewares/checkPermission");
  *     NodeDefinition:
  *       type: object
  *       required:
- *         - typeKey
+ *         - definitionKey
  *         - name
  *         - category
+ *         - nodeType
  *       properties:
- *         typeKey:
+ *         definitionKey:
  *           type: string
  *           description: 節點定義的唯一識別鍵值
  *           example: data-input
+ *         nodeType:
+ *           type: string
+ *           description: 節點類型
+ *           enum: [custom-input, custom-process, statistic-process]
+ *           example: custom-input
  *         name:
  *           type: string
  *           description: 節點定義名稱
@@ -37,7 +43,7 @@ const checkPermission = require("../middlewares/checkPermission");
  *           example: 1.0.0
  *         componentName:
  *           type: string
- *           description: Vue 組件名稱
+ *           description: Vue 組件名稱（custom-input 類型必填）
  *           example: DataInputNode
  *         apiEndpoint:
  *           type: string
@@ -49,14 +55,14 @@ const checkPermission = require("../middlewares/checkPermission");
  *           enum: [GET, POST, PUT, DELETE]
  *           example: POST
  *         uiConfig:
- *           type: object
- *           description: UI 配置
+ *           type: string
+ *           description: UI 配置（JSON 字串）
  *         validationRules:
- *           type: object
- *           description: 驗證規則
+ *           type: string
+ *           description: 驗證規則（JSON 字串）
  *         handles:
- *           type: object
- *           description: 節點連接點配置
+ *           type: string
+ *           description: 節點連接點配置（JSON 字串）
  */
 
 // 將 authenticateToken 中間件應用到所有路由
@@ -93,7 +99,7 @@ router.get(
 
 /**
  * @swagger
- * /api/node-definitions/{typeKey}:
+ * /api/node-definitions/{definitionKey}:
  *   get:
  *     summary: 獲取單個節點定義
  *     tags: [NodeDefinitions]
@@ -101,7 +107,7 @@ router.get(
  *       - bearerAuth: []
  *     parameters:
  *       - in: path
- *         name: typeKey
+ *         name: definitionKey
  *         required: true
  *         schema:
  *           type: string
@@ -117,7 +123,7 @@ router.get(
  *         description: 節點定義不存在
  */
 router.get(
-  "/:typeKey",
+  "/:definitionKey",
   checkPermission(["VIEW_NODE_DEFINITIONS"]),
   nodeDefinitionController.getNodeDefinition
 );
@@ -158,7 +164,7 @@ router.post(
 
 /**
  * @swagger
- * /api/node-definitions/{typeKey}:
+ * /api/node-definitions/{definitionKey}:
  *   put:
  *     summary: 更新節點定義
  *     tags: [NodeDefinitions]
@@ -166,7 +172,7 @@ router.post(
  *       - bearerAuth: []
  *     parameters:
  *       - in: path
- *         name: typeKey
+ *         name: definitionKey
  *         required: true
  *         schema:
  *           type: string
@@ -190,14 +196,14 @@ router.post(
  *         description: 節點定義不存在
  */
 router.put(
-  "/:typeKey",
+  "/:definitionKey",
   checkPermission(["MANAGE_NODE_DEFINITIONS"]),
   nodeDefinitionController.updateNodeDefinition
 );
 
 /**
  * @swagger
- * /api/node-definitions/{typeKey}:
+ * /api/node-definitions/{definitionKey}:
  *   delete:
  *     summary: 刪除節點定義
  *     tags: [NodeDefinitions]
@@ -205,7 +211,7 @@ router.put(
  *       - bearerAuth: []
  *     parameters:
  *       - in: path
- *         name: typeKey
+ *         name: definitionKey
  *         required: true
  *         schema:
  *           type: string
@@ -221,7 +227,7 @@ router.put(
  *         description: 權限不足
  */
 router.delete(
-  "/:typeKey",
+  "/:definitionKey",
   checkPermission(["MANAGE_NODE_DEFINITIONS"]),
   nodeDefinitionController.deleteNodeDefinition
 );

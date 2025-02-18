@@ -219,44 +219,38 @@ model File {
 
 model NodeDefinition {
   /// 主鍵
-  id              String         @id @default(uuid())
+  id            String         @id @default(uuid())
   /// 節點定義鍵值
-  typeKey         String         @unique
-  /// 節點類別
-  category        String
+  definitionKey String         @unique
+  /// 節點類型（custom-input | custom-process | statistic-process）
+  nodeType      String         @default("custom-process")
+  /// 業務分類
+  category      String
   /// 節點名稱
-  name            String
+  name          String
   /// 節點描述
-  description     String
-  /// 組件名稱
-  componentName   String
+  description   String
+  /// Vue 組件名稱（custom-input 必填）
+  componentName String?
   /// 版本號
-  version         String
-  /// 預設配置
-  defaultConfig   String         @default("{}")
-  /// API 端點
-  apiEndpoint     String?
+  version       String
+  /// API 端點（custom-process 和 statistic-process 可用）
+  apiEndpoint   String?
   /// API 方法
-  apiMethod       String?
-  /// 輸入模式
-  inputSchema     String         @default("{}")
-  /// 輸出模式
-  outputSchema    String         @default("{}")
-  /// UI 模式
-  uiSchema        String         @default("{}")
-  /// 圖標
-  icon            String?
-  /// UI配置
-  uiConfig        String         @default("{}")
-  /// 驗證規則
-  validationRules String         @default("{}")
-  /// 連接點配置
-  handles         String         @default("{}")
+  apiMethod     String?
+  /// 預設配置（JSON 字串）
+  config        String         @default("{}")
+  /// UI 配置（JSON 字串，包含樣式等）
+  uiConfig      String         @default("{}")
+  /// 驗證規則（JSON 字串）
+  validation    String         @default("{}")
+  /// 連接點配置（JSON 字串）
+  handles       String         @default("{}")
   /// 創建時間
-  createdAt       DateTime       @default(now())
+  createdAt     DateTime       @default(now())
   /// 更新時間
-  updatedAt       DateTime       @updatedAt
-  NodeTemplate    NodeTemplate[]
+  updatedAt     DateTime       @updatedAt
+  NodeTemplate  NodeTemplate[]
 
   @@map("NodeDefinition")
 }
