@@ -28,8 +28,8 @@ const validateNodeDefinition = (data) => {
   if (!data.definitionKey) {
     errors.push("definitionKey 為必填欄位");
   } else {
-    if (data.definitionKey.length < 5 || data.definitionKey.length > 15) {
-      errors.push("definitionKey 長度必須在 5 到 15 個字元之間");
+    if (data.definitionKey.length < 5 || data.definitionKey.length > 30) {
+      errors.push("definitionKey 長度必須在 5 到 30 個字元之間");
     }
     if (!/^[a-z][a-z0-9-]*$/.test(data.definitionKey)) {
       errors.push(
@@ -112,6 +112,30 @@ const validateNodeDefinition = (data) => {
   return errors;
 };
 
+// JSON 欄位處理工具
+const handleJsonField = (field, defaultValue = "{}") => {
+  if (typeof field === "undefined" || field === null) {
+    return defaultValue;
+  }
+
+  if (typeof field === "string") {
+    try {
+      // 驗證是否為有效的 JSON 字串
+      JSON.parse(field);
+      return field;
+    } catch (e) {
+      return defaultValue;
+    }
+  }
+
+  try {
+    return JSON.stringify(field);
+  } catch (e) {
+    console.warn("JSON 字串化失敗:", e);
+    return defaultValue;
+  }
+};
+
 // 獲取所有節點定義
 exports.getNodeDefinitions = async (req, res) => {
   try {
@@ -189,7 +213,7 @@ exports.createNodeDefinition = async (req, res) => {
       });
     }
 
-    // 確保 JSON 字串格式
+    // 創建節點定義
     const nodeDefinition = await prisma.nodeDefinition.create({
       data: {
         definitionKey,
@@ -201,10 +225,10 @@ exports.createNodeDefinition = async (req, res) => {
         componentName,
         apiEndpoint,
         apiMethod,
-        config: config ? JSON.stringify(config) : "{}",
-        uiConfig: uiConfig ? JSON.stringify(uiConfig) : "{}",
-        validation: validation ? JSON.stringify(validation) : "{}",
-        handles: handles ? JSON.stringify(handles) : "{}",
+        config: handleJsonField(config),
+        uiConfig: handleJsonField(uiConfig),
+        validation: handleJsonField(validation),
+        handles: handleJsonField(handles),
       },
     });
 
@@ -257,10 +281,10 @@ exports.updateNodeDefinition = async (req, res) => {
         componentName,
         apiEndpoint,
         apiMethod,
-        config: config ? JSON.stringify(config) : undefined,
-        uiConfig: uiConfig ? JSON.stringify(uiConfig) : undefined,
-        validation: validation ? JSON.stringify(validation) : undefined,
-        handles: handles ? JSON.stringify(handles) : undefined,
+        config: handleJsonField(config),
+        uiConfig: handleJsonField(uiConfig),
+        validation: handleJsonField(validation),
+        handles: handleJsonField(handles),
       },
     });
 

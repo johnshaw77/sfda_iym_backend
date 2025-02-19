@@ -1,6 +1,7 @@
 const jwt = require("jsonwebtoken");
 const { PrismaClient } = require("@prisma/client");
 const { AppError } = require("./errorHandler");
+const { logger } = require("../utils/logger");
 
 const prisma = new PrismaClient();
 
@@ -13,12 +14,25 @@ exports.authenticateToken = async (req, res, next) => {
     const authHeader = req.headers["authorization"];
     const token = authHeader && authHeader.split(" ")[1];
 
+    logger.info("驗證 token", {
+      path: req.path,
+      method: req.method,
+      authHeader: authHeader,
+      hasToken: !!token,
+    });
+
     if (!token) {
       throw new AppError("未提供認證令牌", 401);
     }
 
     // 驗證 token
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+    logger.info("Token 解碼成功", {
+      userId: decoded.userId,
+      path: req.path,
+    });
+
     // 檢查用戶是否存在且啟用
     const user = await prisma.user.findUnique({
       where: { id: decoded.userId },
@@ -39,6 +53,13 @@ exports.authenticateToken = async (req, res, next) => {
       },
     });
 
+    logger.info("用戶查詢結果", {
+      path: req.path,
+      hasUser: !!user,
+      isActive: user?.isActive,
+      roles: user?.userRoles.map((ur) => ur.role.name),
+    });
+
     if (!user) {
       throw new AppError("用戶不存在", 401);
     }
@@ -53,8 +74,20 @@ exports.authenticateToken = async (req, res, next) => {
       ur.role.rolePermissions.map((rp) => rp.permission.name)
     );
 
+    logger.info("權限驗證完成", {
+      path: req.path,
+      userId: user.id,
+      permissions: req.userPermissions,
+    });
+
     next();
   } catch (error) {
+    logger.error("權限驗證錯誤", {
+      path: req.path,
+      error: error.message,
+      stack: error.stack,
+    });
+
     if (error.name === "JsonWebTokenError") {
       next(new AppError("無效的認證令牌", 401));
     } else if (error.name === "TokenExpiredError") {

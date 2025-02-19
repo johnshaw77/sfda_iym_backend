@@ -66,7 +66,7 @@ const checkPermission = require("../middlewares/checkPermission");
  */
 
 // 將 authenticateToken 中間件應用到所有路由
-//router.use(authenticateToken);
+router.use(authenticateToken);
 
 /**
  * @swagger
@@ -92,7 +92,6 @@ const checkPermission = require("../middlewares/checkPermission");
  */
 router.get(
   "/",
-  authenticateToken,
   //checkPermission(["VIEW_NODE_DEFINITIONS"]),
   nodeDefinitionController.getNodeDefinitions
 );
