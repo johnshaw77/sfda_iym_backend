@@ -219,38 +219,43 @@ model File {
 
 model NodeDefinition {
   /// 主鍵
-  id            String         @id @default(uuid())
+  id            String   @id @default(uuid())
   /// 節點定義鍵值
-  definitionKey String         @unique
+  definitionKey String   @unique
   /// 節點類型（custom-input | custom-process | statistic-process）
-  nodeType      String         @default("custom-process")
+  nodeType      String   @default("custom-process")
   /// 業務分類
   category      String
-  /// 節點名稱
+  /// 節點名稱（必填）
   name          String
-  /// 節點描述
+  /// 節點描述（必填）
   description   String
-  /// Vue 組件名稱（custom-input 必填）
+  /// Vue 組件名稱
   componentName String?
-  /// 版本號
-  version       String
-  /// API 端點（custom-process 和 statistic-process 可用）
+  /// Vue 組件路徑（選填）
+  componentPath String?
+  /// 版本號（預設 1.0.0）
+  version       String   @default("1.0.0")
+  /// API 端點
   apiEndpoint   String?
   /// API 方法
   apiMethod     String?
-  /// 預設配置（JSON 字串）
-  config        String         @default("{}")
-  /// UI 配置（JSON 字串，包含樣式等）
-  uiConfig      String         @default("{}")
-  /// 驗證規則（JSON 字串）
-  validation    String         @default("{}")
+  /// 預設配置（JSON 字串，選填）
+  config        String   @default("{}")
+  /// UI 配置（JSON 字串，選填）
+  uiConfig      String   @default("{}")
+  /// 驗證規則（JSON 字串，選填）
+  validation    String   @default("{}")
   /// 連接點配置（JSON 字串）
-  handles       String         @default("{}")
+  handles       String   @default("{}")
   /// 創建時間
-  createdAt     DateTime       @default(now())
-  /// 更新時間
-  updatedAt     DateTime       @updatedAt
-  NodeTemplate  NodeTemplate[]
+  createdAt     DateTime @default(now())
+  /// 最後更新時間
+  updatedAt     DateTime @updatedAt
+
+  // 關聯
+  nodeTemplates NodeTemplate[]
+  nodeInstances NodeInstance[]
 
   @@map("NodeDefinition")
 }
@@ -395,6 +400,8 @@ model NodeInstance {
   workflowInstanceId String
   /// 關聯的節點範本ID
   nodeTemplateId     String
+  /// 關聯的節點定義ID
+  nodeDefinitionId   String
   /// 執行狀態（pending、running、completed、failed）
   status             String
   /// 開始執行時間
@@ -413,6 +420,7 @@ model NodeInstance {
   // 關聯
   workflowInstance  WorkflowInstance         @relation(fields: [workflowInstanceId], references: [id])
   nodeTemplate      NodeTemplate             @relation(fields: [nodeTemplateId], references: [id])
+  nodeDefinition    NodeDefinition           @relation(fields: [nodeDefinitionId], references: [id])
   sourceConnections NodeInstanceConnection[] @relation("SourceNodeInstance")
   targetConnections NodeInstanceConnection[] @relation("TargetNodeInstance")
   dataSnapshots     DataSnapshot[]
