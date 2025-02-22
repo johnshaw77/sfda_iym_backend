@@ -6,7 +6,7 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "mysql"
   url      = env("DATABASE_URL")
 }
 
@@ -45,6 +45,13 @@ model User {
   // 新增關聯
   createdSystemCodes SystemCode[] @relation("CreatedSystemCodes")
   updatedSystemCodes SystemCode[] @relation("UpdatedSystemCodes")
+
+  // 新增 Flow 相關關聯
+  createdFlowTemplates FlowTemplate[] @relation("CreatedFlowTemplates")
+  updatedFlowTemplates FlowTemplate[] @relation("UpdatedFlowTemplates")
+  createdFlowInstances FlowInstance[] @relation("CreatedFlowInstances")
+  updatedFlowInstances FlowInstance[] @relation("UpdatedFlowInstances")
+  createdFlowDocuments FlowDocument[] @relation("CreatedFlowDocuments")
 
   @@index([email])
   @@map("User")
@@ -153,6 +160,8 @@ model Project {
   creator           User               @relation("CreatedProjects", fields: [createdBy], references: [id])
   updater           User               @relation("UpdatedProjects", fields: [updatedBy], references: [id])
   workflowInstances WorkflowInstance[]
+  FlowInstance      FlowInstance[]
+  FlowDocument      FlowDocument[]
 
   @@map("Project")
 }
@@ -564,4 +573,135 @@ model SystemCode {
   updater User @relation("UpdatedSystemCodes", fields: [updatedBy], references: [id])
 
   @@map("SystemCode")
+}
+
+model FlowNodeDefinition {
+  /// 主鍵
+  id            String   @id @default(uuid())
+  /// 業務分類
+  category      String
+  /// 節點名稱
+  name          String
+  /// 節點描述
+  description   String
+  /// Vue 組件名稱
+  componentName String
+  /// Vue 組件路徑（選填）
+  componentPath String?
+  /// 預設配置
+  config        Json     @default(dbgenerated("(JSON_OBJECT())"))
+  /// UI 配置
+  uiConfig      Json     @default(dbgenerated("(JSON_OBJECT())"))
+  /// 連接點配置
+  handles       Json     @default(dbgenerated("(JSON_OBJECT())"))
+  /// 創建時間
+  createdAt     DateTime @default(now())
+  /// 最後更新時間
+  updatedAt     DateTime @updatedAt
+
+  // 關聯
+  templates FlowTemplate[]
+
+  @@map("FlowNodeDefinition")
+}
+
+model FlowTemplate {
+  /// 主鍵
+  id          String   @id @default(uuid())
+  /// 模板名稱
+  name        String
+  /// 模板描述
+  description String
+  /// 模板類型
+  type        String
+  /// 版本號
+  version     String
+  /// 模板狀態（draft、active、deprecated）
+  status      String   @default("draft")
+  /// 節點定義
+  nodes       Json     @default(dbgenerated("(JSON_ARRAY())"))
+  /// 邊緣定義
+  edges       Json     @default(dbgenerated("(JSON_ARRAY())"))
+  /// 模板配置
+  metadata    Json?
+  /// 創建者ID
+  createdBy   String
+  /// 更新者ID
+  updatedBy   String
+  /// 創建時間
+  createdAt   DateTime @default(now())
+  /// 最後更新時間
+  updatedAt   DateTime @updatedAt
+
+  // 關聯
+  nodeDefinitions FlowNodeDefinition[]
+  instances       FlowInstance[]
+  creator         User                 @relation("CreatedFlowTemplates", fields: [createdBy], references: [id])
+  updater         User                 @relation("UpdatedFlowTemplates", fields: [updatedBy], references: [id])
+
+  @@map("FlowTemplate")
+}
+
+model FlowInstance {
+  /// 主鍵
+  id         String   @id @default(uuid())
+  /// 關聯的專案ID
+  projectId  String
+  /// 關聯的模板ID
+  templateId String
+  /// 實例狀態（draft、running、completed、failed）
+  status     String   @default("draft")
+  /// 工作流上下文
+  context    Json     @default(dbgenerated("(JSON_OBJECT())"))
+  /// 節點實例狀態
+  nodes      Json     @default(dbgenerated("(JSON_ARRAY())"))
+  /// 實際執行的邊緣狀態
+  edges      Json     @default(dbgenerated("(JSON_ARRAY())"))
+  /// 創建者ID
+  createdBy  String
+  /// 更新者ID
+  updatedBy  String
+  /// 創建時間
+  createdAt  DateTime @default(now())
+  /// 最後更新時間
+  updatedAt  DateTime @updatedAt
+
+  // 關聯
+  project   Project        @relation(fields: [projectId], references: [id])
+  template  FlowTemplate   @relation(fields: [templateId], references: [id])
+  creator   User           @relation("CreatedFlowInstances", fields: [createdBy], references: [id])
+  updater   User           @relation("UpdatedFlowInstances", fields: [updatedBy], references: [id])
+  documents FlowDocument[]
+
+  @@map("FlowInstance")
+}
+
+model FlowDocument {
+  /// 主鍵
+  id         String   @id @default(uuid())
+  /// 關聯的專案ID
+  projectId  String
+  /// 關聯的工作流實例ID
+  instanceId String
+  /// 關聯的節點ID
+  nodeId     String?
+  /// 文檔類型（report、image、attachment）
+  docType    String
+  /// 文檔名稱
+  name       String
+  /// 存儲路徑
+  url        String
+  /// 文檔元數據
+  metadata   Json?
+  /// 創建者ID
+  createdBy  String
+  /// 創建時間
+  createdAt  DateTime @default(now())
+
+  // 關聯
+  project  Project      @relation(fields: [projectId], references: [id])
+  instance FlowInstance @relation(fields: [instanceId], references: [id])
+  creator  User         @relation("CreatedFlowDocuments", fields: [createdBy], references: [id])
+
+  @@map("FlowDocument")
 }

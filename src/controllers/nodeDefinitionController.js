@@ -69,6 +69,7 @@ const validateNodeDefinition = (data) => {
     const validNodeTypes = [
       "custom-input",
       "custom-process",
+      "http-request",
       "statistic-process",
     ];
     if (!validNodeTypes.includes(data.nodeType)) {
