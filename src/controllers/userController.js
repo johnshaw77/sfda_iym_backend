@@ -5,6 +5,9 @@ const fs = require("fs");
 const avatarService = require("../services/avatarService");
 const prisma = new PrismaClient();
 
+//TODO: 統一的回應格式
+const { errorResponse, successResponse } = require("../utils/jsonResponse");
+
 /**
  * 獲取所有用戶
  */

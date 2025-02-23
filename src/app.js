@@ -58,9 +58,9 @@ app.use("/api/users", require("./routes/userRoutes"));
 app.use("/api/files", require("./routes/fileRoutes"));
 app.use("/api/rbac", require("./routes/rbacRoutes"));
 app.use("/api/projects", require("./routes/projectRoutes"));
-app.use("/api/workflow-templates", require("./routes/workflowTemplateRoutes"));
+//XX app.use("/api/workflow-templates", require("./routes/workflowTemplateRoutes"));
 app.use("/api/external", require("./routes/externalApiRoutes"));
-app.use("/api/node-definitions", require("./routes/nodeDefinitionRoutes"));
+//XX app.use("/api/node-definitions", require("./routes/nodeDefinitionRoutes"));
 app.use("/api/flow-node-definitions", require("./routes/flowNodeDefinitionRoutes"));
 app.use("/api/flow-templates", require("./routes/flowTemplateRoutes"));
 

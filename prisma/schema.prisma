@@ -43,6 +43,10 @@ model User {
   uploadedFiles            FileNode[]         @relation("UploadedFiles")
 
   // 新增關聯
+  createdFlowNodeDefinitions FlowNodeDefinition[] @relation("CreatedFlowNodeDefinitions")
+  updatedFlowNodeDefinitions FlowNodeDefinition[] @relation("UpdatedFlowNodeDefinitions")
+
+  // 新增關聯
   createdSystemCodes SystemCode[] @relation("CreatedSystemCodes")
   updatedSystemCodes SystemCode[] @relation("UpdatedSystemCodes")
 
@@ -579,15 +583,17 @@ model FlowNodeDefinition {
   /// 主鍵
   id            String   @id @default(uuid())
   /// 業務分類
-  category      String
+  category      String   @db.VarChar(150)
   /// 節點名稱
-  name          String
+  name          String   @db.VarChar(150)
   /// 節點描述
-  description   String
+  description   String   @db.VarChar(255)
+  /// 節點圖示
+  icon          String?  @db.VarChar(50)
   /// Vue 組件名稱
-  componentName String
+  componentName String   @db.VarChar(150)
   /// Vue 組件路徑（選填）
-  componentPath String?
+  componentPath String?  @db.VarChar(150)
   /// 預設配置
   config        Json     @default(dbgenerated("(JSON_OBJECT())"))
   /// UI 配置
@@ -596,11 +602,17 @@ model FlowNodeDefinition {
   handles       Json     @default(dbgenerated("(JSON_OBJECT())"))
   /// 創建時間
   createdAt     DateTime @default(now())
+  /// 創建者ID
+  createdBy     String?
   /// 最後更新時間
   updatedAt     DateTime @updatedAt
+  /// 更新者ID
+  updatedBy     String?
 
   // 關聯
   templates FlowTemplate[]
+  creator   User?          @relation("CreatedFlowNodeDefinitions", fields: [createdBy], references: [id])
+  updater   User?          @relation("UpdatedFlowNodeDefinitions", fields: [updatedBy], references: [id])
 
   @@map("FlowNodeDefinition")
 }
@@ -609,13 +621,13 @@ model FlowTemplate {
   /// 主鍵
   id          String   @id @default(uuid())
   /// 模板名稱
-  name        String
+  name        String   @db.VarChar(150)
   /// 模板描述
-  description String
+  description String   @db.VarChar(255)
   /// 模板類型
-  type        String
+  type        String   @db.VarChar(50)
   /// 版本號
-  version     String
+  version     String   @db.VarChar(20)
   /// 模板狀態（draft、active、deprecated）
   status      String   @default("draft")
   /// 節點定義
@@ -624,10 +636,12 @@ model FlowTemplate {
   edges       Json     @default(dbgenerated("(JSON_ARRAY())"))
   /// 模板配置
   metadata    Json?
+  /// 縮圖路徑
+  thumbnail   String?
   /// 創建者ID
-  createdBy   String
+  createdBy   String?
   /// 更新者ID
-  updatedBy   String
+  updatedBy   String?
   /// 創建時間
   createdAt   DateTime @default(now())
   /// 最後更新時間
@@ -636,8 +650,8 @@ model FlowTemplate {
   // 關聯
   nodeDefinitions FlowNodeDefinition[]
   instances       FlowInstance[]
-  creator         User                 @relation("CreatedFlowTemplates", fields: [createdBy], references: [id])
-  updater         User                 @relation("UpdatedFlowTemplates", fields: [updatedBy], references: [id])
+  creator         User?                @relation("CreatedFlowTemplates", fields: [createdBy], references: [id])
+  updater         User?                @relation("UpdatedFlowTemplates", fields: [updatedBy], references: [id])
 
   @@map("FlowTemplate")
 }
@@ -658,9 +672,9 @@ model FlowInstance {
   /// 實際執行的邊緣狀態
   edges      Json     @default(dbgenerated("(JSON_ARRAY())"))
   /// 創建者ID
-  createdBy  String
+  createdBy  String?
   /// 更新者ID
-  updatedBy  String
+  updatedBy  String?
   /// 創建時間
   createdAt  DateTime @default(now())
   /// 最後更新時間
@@ -669,8 +683,8 @@ model FlowInstance {
   // 關聯
   project   Project        @relation(fields: [projectId], references: [id])
   template  FlowTemplate   @relation(fields: [templateId], references: [id])
-  creator   User           @relation("CreatedFlowInstances", fields: [createdBy], references: [id])
-  updater   User           @relation("UpdatedFlowInstances", fields: [updatedBy], references: [id])
+  creator   User?          @relation("CreatedFlowInstances", fields: [createdBy], references: [id])
+  updater   User?          @relation("UpdatedFlowInstances", fields: [updatedBy], references: [id])
   documents FlowDocument[]
 
   @@map("FlowInstance")
@@ -694,14 +708,14 @@ model FlowDocument {
   /// 文檔元數據
   metadata   Json?
   /// 創建者ID
-  createdBy  String
+  createdBy  String?
   /// 創建時間
   createdAt  DateTime @default(now())
 
   // 關聯
   project  Project      @relation(fields: [projectId], references: [id])
   instance FlowInstance @relation(fields: [instanceId], references: [id])
-  creator  User         @relation("CreatedFlowDocuments", fields: [createdBy], references: [id])
+  creator  User?        @relation("CreatedFlowDocuments", fields: [createdBy], references: [id])
 
   @@map("FlowDocument")
 }

@@ -1,6 +1,6 @@
 const { PrismaClient } = require("@prisma/client");
 const prisma = new PrismaClient();
-
+const { errorResponse, successResponse } = require("../utils/jsonResponse");
 // 生成專案編號
 const generateProjectNumber = (systemCode) => {
   const date = new Date();
@@ -19,10 +19,7 @@ exports.createProject = async (req, res) => {
     // 驗證狀態值
     const validStatuses = ["draft", "active", "completed"];
     if (status && !validStatuses.includes(status)) {
-      return res.status(400).json({
-        message: "無效的狀態值",
-        validStatuses,
-      });
+      return errorResponse(res, 400, "無效的狀態值", validStatuses);
     }
 
     const project = await prisma.project.create({
@@ -55,13 +52,13 @@ exports.createProject = async (req, res) => {
       },
     });
 
-    res.status(201).json({
+    successResponse(res, 201, {
       message: "專案創建成功",
       project,
     });
   } catch (error) {
     console.error("創建專案錯誤:", error);
-    res.status(500).json({ message: "伺服器錯誤" });
+    errorResponse(res, 500, "伺服器錯誤");
   }
 };
 
@@ -125,10 +122,10 @@ exports.getAllProjects = async (req, res) => {
       },
     });
 
-    res.json(projects);
+    successResponse(res, 200, projects);
   } catch (error) {
     console.error("獲取專案列表錯誤:", error);
-    res.status(500).json({ message: "伺服器錯誤" });
+    errorResponse(res, 500, "伺服器錯誤");
   }
 };
 
@@ -193,13 +190,13 @@ exports.getProjectById = async (req, res) => {
     });
 
     if (!project) {
-      return res.status(404).json({ message: "專案不存在" });
+      return errorResponse(res, 404, "專案不存在");
     }
 
-    res.json(project);
+    successResponse(res, 200, project);
   } catch (error) {
     console.error("獲取專案詳情錯誤:", error);
-    res.status(500).json({ message: "伺服器錯誤" });
+    errorResponse(res, 500, "伺服器錯誤");
   }
 };
 
@@ -213,10 +210,7 @@ exports.updateProject = async (req, res) => {
     // 驗證狀態值
     const validStatuses = ["draft", "active", "completed"];
     if (status && !validStatuses.includes(status)) {
-      return res.status(400).json({
-        message: "無效的狀態值",
-        validStatuses,
-      });
+      return errorResponse(res, 400, "無效的狀態值", validStatuses);
     }
 
     const project = await prisma.project.update({
@@ -247,16 +241,16 @@ exports.updateProject = async (req, res) => {
       },
     });
 
-    res.json({
+    successResponse(res, 200, {
       message: "專案更新成功",
       project,
     });
   } catch (error) {
     if (error.code === "P2025") {
-      return res.status(404).json({ message: "專案不存在" });
+      return errorResponse(res, 404, "專案不存在");
     }
     console.error("更新專案錯誤:", error);
-    res.status(500).json({ message: "伺服器錯誤" });
+    errorResponse(res, 500, "伺服器錯誤");
   }
 };
 
@@ -276,7 +270,7 @@ exports.deleteProject = async (req, res) => {
     });
 
     if (!project) {
-      return res.status(404).json({ message: "專案不存在" });
+      return errorResponse(res, 404, "專案不存在");
     }
 
     if (project.workflowInstances.length > 0) {

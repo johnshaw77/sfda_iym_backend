@@ -1,13 +1,14 @@
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
+const { errorResponse, successResponse } = require('../utils/jsonResponse');
 
 // 獲取所有節點定義
 exports.getAllNodeDefinitions = async (req, res) => {
   try {
     const nodeDefinitions = await prisma.flowNodeDefinition.findMany();
-    res.json(nodeDefinitions);
+    successResponse(res, 200, nodeDefinitions);
   } catch (error) {
-    res.status(500).json({ error: '獲取節點定義失敗' });
+    errorResponse(res, 500, '獲取節點定義失敗');
   }
 };
 
@@ -20,36 +21,39 @@ exports.getNodeDefinitionById = async (req, res) => {
     });
     
     if (!nodeDefinition) {
-      return res.status(404).json({ error: '找不到節點定義' });
+      errorResponse(res, 404, '找不到節點定義');
     }
     
-    res.json(nodeDefinition);
+    successResponse(res, 200, nodeDefinition);
   } catch (error) {
-    res.status(500).json({ error: '獲取節點定義失敗' });
+    errorResponse(res, 500, '獲取節點定義失敗');
   }
 };
 
 // 創建新的節點定義
 exports.createNodeDefinition = async (req, res) => {
+  console.log("req.body", req.body);
+  console.log("req.body.icon", req.body.icon);
   try {
     const {
-      definitionKey,
       category,
       name,
       description,
+      icon,
       componentName,
       componentPath,
       config,
       uiConfig,
-      handles
+      handles,
+      
     } = req.body;
 
     const nodeDefinition = await prisma.flowNodeDefinition.create({
       data: {
-        definitionKey,
         category,
         name,
         description,
+        icon,
         componentName,
         componentPath,
         config: config || {},
@@ -58,9 +62,9 @@ exports.createNodeDefinition = async (req, res) => {
       }
     });
 
-    res.status(201).json(nodeDefinition);
+    successResponse(res, 201, nodeDefinition);
   } catch (error) {
-    res.status(500).json({ error: '創建節點定義失敗' });
+    errorResponse(res, 500, '創建節點定義失敗');
   }
 };
 
@@ -72,6 +76,7 @@ exports.updateNodeDefinition = async (req, res) => {
       category,
       name,
       description,
+      icon,
       componentName,
       componentPath,
       config,
@@ -85,6 +90,7 @@ exports.updateNodeDefinition = async (req, res) => {
         category,
         name,
         description,
+        icon,
         componentName,
         componentPath,
         ...(config && { config }),
@@ -93,9 +99,9 @@ exports.updateNodeDefinition = async (req, res) => {
       }
     });
 
-    res.json(nodeDefinition);
+    successResponse(res, 200, nodeDefinition);
   } catch (error) {
-    res.status(500).json({ error: '更新節點定義失敗' });
+    errorResponse(res, 500, '更新節點定義失敗');
   }
 };
 
@@ -107,8 +113,8 @@ exports.deleteNodeDefinition = async (req, res) => {
       where: { id }
     });
     
-    res.status(204).send();
+    successResponse(res, 204);
   } catch (error) {
-    res.status(500).json({ error: '刪除節點定義失敗' });
+    errorResponse(res, 500, '刪除節點定義失敗');
   }
 };

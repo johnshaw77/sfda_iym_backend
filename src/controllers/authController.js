@@ -7,6 +7,9 @@ const avatarService = require("../services/avatarService");
 
 const prisma = new PrismaClient();
 
+//TODO: 統一的回應格式
+const { errorResponse, successResponse } = require("../utils/jsonResponse");
+
 // 用戶註冊
 exports.register = async (req, res) => {
   try {

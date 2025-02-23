@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const nodeDefinitionController = require("../controllers/nodeDefinitionController");
+//const nodeDefinitionController = require("../controllers/nodeDefinitionController");
 const { authenticateToken } = require("../middlewares/auth");
 const checkPermission = require("../middlewares/checkPermission");
 const flowTemplateController = require('../controllers/flowTemplateController');
@@ -294,6 +294,37 @@ router.delete(
   '/:id',
   checkPermission(['MANAGE_FLOW_TEMPLATES']),
   flowTemplateController.deleteTemplate
+);
+
+/**
+ * @swagger
+ * /api/flow-templates/{id}/publish:
+ *   put:
+ *     summary: 發布流程模板
+ *     tags: [FlowTemplates]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: 流程模板ID
+ *     responses:
+ *       200:
+ *         description: 流程模板發布成功
+ *       404:
+ *         description: 流程模板不存在
+ *       401:
+ *         description: 未授權
+ *       403:
+ *         description: 權限不足
+ */ 
+router.put(
+  '/:id/publish',
+  checkPermission(['MANAGE_FLOW_TEMPLATES']),
+  flowTemplateController.publishTemplate
 );
 
 module.exports = router; 
