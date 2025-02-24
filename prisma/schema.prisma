@@ -637,7 +637,7 @@ model FlowTemplate {
   /// 模板配置
   metadata    Json?
   /// 縮圖路徑
-  thumbnail   String?
+  thumbnail   String?  @db.MediumText
   /// 創建者ID
   createdBy   String?
   /// 更新者ID
@@ -672,9 +672,9 @@ model FlowInstance {
   /// 實際執行的邊緣狀態
   edges      Json     @default(dbgenerated("(JSON_ARRAY())"))
   /// 創建者ID
-  createdBy  String?
+  createdBy  String
   /// 更新者ID
-  updatedBy  String?
+  updatedBy  String
   /// 創建時間
   createdAt  DateTime @default(now())
   /// 最後更新時間
@@ -683,8 +683,8 @@ model FlowInstance {
   // 關聯
   project   Project        @relation(fields: [projectId], references: [id])
   template  FlowTemplate   @relation(fields: [templateId], references: [id])
-  creator   User?          @relation("CreatedFlowInstances", fields: [createdBy], references: [id])
-  updater   User?          @relation("UpdatedFlowInstances", fields: [updatedBy], references: [id])
+  creator   User           @relation("CreatedFlowInstances", fields: [createdBy], references: [id])
+  updater   User           @relation("UpdatedFlowInstances", fields: [updatedBy], references: [id])
   documents FlowDocument[]
 
   @@map("FlowInstance")

@@ -290,3 +290,45 @@ exports.deleteProject = async (req, res) => {
     res.status(500).json({ message: "伺服器錯誤" });
   }
 };
+
+exports.getFlowInstanceById = async (req, res) => {
+  try {
+    const { projectId } = req.params;
+
+    // 檢查專案是否存在
+    const project = await prisma.project.findUnique({
+      where: { id: projectId },
+    });
+
+    if (!project) {
+      return res.status(404).json({ message: "專案不存在" });
+    }
+
+    // 獲取專案的工作流程實例
+    const instances = await prisma.flowInstance.findMany({
+      where: { projectId },
+      include: {
+        template: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+        creator: {
+          select: {
+            id: true,
+            username: true,
+          },
+        },
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+    });
+
+    successResponse(res, 200, instances);
+  } catch (error) {
+    console.error("獲取專案工作流程實例失敗:", error);
+    errorResponse(res, 500, "獲取專案工作流程實例失敗");
+  }
+};

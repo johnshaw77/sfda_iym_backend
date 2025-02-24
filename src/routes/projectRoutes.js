@@ -2,6 +2,8 @@ const express = require("express");
 const router = express.Router();
 const projectController = require("../controllers/projectController");
 const { authenticateToken } = require("../middlewares/auth");
+const { PrismaClient } = require("@prisma/client");
+const prisma = new PrismaClient();
 
 /**
  * @swagger
@@ -218,5 +220,34 @@ router.put("/:id", authenticateToken, projectController.updateProject);
  *                   type: string
  */
 router.delete("/:id", authenticateToken, projectController.deleteProject);
+
+/**
+ * @swagger
+ * /api/projects/{projectId}/instances:
+ *   get:
+ *     summary: 獲取專案的工作流程實例列表
+ *     tags: [Projects]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: projectId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: 專案 ID
+ *     responses:
+ *       200:
+ *         description: 成功獲取工作流程實例列表
+ *       404:
+ *         description: 專案不存在
+ *       500:
+ *         description: 伺服器錯誤
+ */
+router.get(
+  "/:projectId/instances",
+  authenticateToken,
+  projectController.getFlowInstanceById
+);
 
 module.exports = router;

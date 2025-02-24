@@ -317,8 +317,7 @@ async function createFlowTemplates(prisma) {
         status: i % 2 === 0 ? "active" : "draft",
         createdBy: admin.id,
         updatedBy: admin.id,
-        nodes: {
-          create: [
+        nodes: [
             {
               id: `node-${i}-1`,
               position: { x: 100, y: 100 },
@@ -343,10 +342,8 @@ async function createFlowTemplates(prisma) {
                 nodeRef: ''
               }
             }
-          ]
-        },
-        edges: {
-          create: [
+          ],
+        edges: [
             {
               id: `edge-${i}-1`,
               source: `node-${i}-1`,
@@ -358,7 +355,6 @@ async function createFlowTemplates(prisma) {
               target: `node-${i}-3`
             }
           ]
-        }
       }
     });
     console.log(`已創建流程模板: ${templateNames[i]}`);

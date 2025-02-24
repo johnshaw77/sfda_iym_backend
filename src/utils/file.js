@@ -4,7 +4,7 @@
 
 const fs = require("fs");
 const path = require("path");
-const { getResourceUrl, getServerUrl } = require("./serverUrl");
+const { getResourceUrl, getServerUrl, getFileUrl } = require("./serverUrl");
 
 /**
  * 檢查目錄是否存在，不存在則創建
@@ -47,9 +47,9 @@ const getFullPath = (relativePath) => {
  * @param {string} filePath - 文件路徑
  * @returns {string|null} 文件的完整 URL
  */
-const getFileUrl = (filePath) => {
-  return getResourceUrl(filePath);
-};
+// const getFileUrl = (filePath) => {
+//   return getResourceUrl(filePath);
+// };
 
 /**
  * 檢查文件是否存在
@@ -113,16 +113,31 @@ const generateUniqueFileName = (originalName) => {
   return `${timestamp}-${random}${extension}`;
 };
 
+/**
+ * 解碼檔案名稱
+ * @param {string} filename - 檔案名稱
+ * @returns {string} 解碼後的檔案名稱
+ */
+const getDecodedFileName = (filename) => {
+  if (!filename) return "";
+  try {
+    // 嘗試將 latin1 編碼的檔案名轉換為 UTF-8
+    return Buffer.from(filename, "latin1").toString("utf8");
+  } catch {
+    return filename;
+  }
+};
+
 module.exports = {
   getServerUrl,
   ensureDirectoryExists,
   deleteFile,
   getFullPath,
-  getFileUrl,
   fileExists,
   getFileSize,
   getFileExtension,
   validateFileType,
   validateFileSize,
   generateUniqueFileName,
+  getDecodedFileName,
 };

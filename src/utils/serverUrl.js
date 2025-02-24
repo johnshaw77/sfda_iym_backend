@@ -5,7 +5,7 @@
 const getServerConfig = () => {
   const protocol = process.env.NODE_ENV === "production" ? "https" : "http";
   const host = process.env.HOST || "localhost";
-  const port = process.env.PORT || 3000;
+  const port = process.env.PORT || 3001;
   const baseUrl = process.env.API_URL || `${protocol}://${host}:${port}`;
 
   return {
@@ -38,8 +38,26 @@ const getResourceUrl = (resourcePath) => {
   return getServerUrl(resourcePath);
 };
 
+/**
+ * 生成檔案的完整 URL
+ * @param {string} serverUrl - 服務器 URL
+ * @param {string} filePath - 檔案路徑
+ * @returns {string|null} 檔案的完整 URL
+ */
+const getFileUrl = (serverUrl, filePath) => {
+  console.log("serverUrl", serverUrl, "---", filePath);
+  if (!filePath) return null;
+  // 將路徑中的每個部分分別進行 URL 編碼
+  const encodedPath = filePath
+    .split("/")
+    .map((part) => encodeURIComponent(part))
+    .join("/");
+  return `${serverUrl}/${encodedPath}`;
+};
+
 module.exports = {
   getServerConfig,
   getServerUrl,
   getResourceUrl,
+  getFileUrl,
 };
