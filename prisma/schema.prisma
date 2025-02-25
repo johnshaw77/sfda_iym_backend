@@ -658,27 +658,28 @@ model FlowTemplate {
 
 model FlowInstance {
   /// 主鍵
-  id         String   @id @default(uuid())
+  id         String @id @default(uuid())
   /// 關聯的專案ID
   projectId  String
   /// 關聯的模板ID
   templateId String
   /// 實例狀態（draft、running、completed、failed）
-  status     String   @default("draft")
+  status     String @default("draft")
   /// 工作流上下文
-  context    Json     @default(dbgenerated("(JSON_OBJECT())"))
+  context    Json   @default(dbgenerated("(JSON_OBJECT())"))
   /// 節點實例狀態
-  nodes      Json     @default(dbgenerated("(JSON_ARRAY())"))
+  nodes      Json   @default(dbgenerated("(JSON_ARRAY())"))
   /// 實際執行的邊緣狀態
-  edges      Json     @default(dbgenerated("(JSON_ARRAY())"))
+  edges      Json   @default(dbgenerated("(JSON_ARRAY())"))
+
   /// 創建者ID
-  createdBy  String
+  createdBy String
   /// 更新者ID
-  updatedBy  String
+  updatedBy String
   /// 創建時間
-  createdAt  DateTime @default(now())
+  createdAt DateTime @default(now())
   /// 最後更新時間
-  updatedAt  DateTime @updatedAt
+  updatedAt DateTime @updatedAt
 
   // 關聯
   project   Project        @relation(fields: [projectId], references: [id])

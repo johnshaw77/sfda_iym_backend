@@ -293,4 +293,61 @@ router.put(
   flowInstanceController.stopInstance
 );
 
+//#region 工作流實例-流轉處理
+// 節點執行相關
+router.post(
+  "/:id/nodes/:nodeId/execute",
+  checkPermission(["MANAGE_FLOW_INSTANCES"]),
+  flowInstanceController.executeNode
+);
+
+// 節點狀態相關
+router.get(
+  "/:id/nodes/:nodeId/status",
+  checkPermission(["VIEW_FLOW_INSTANCES"]),
+  flowInstanceController.getNodeStatus
+);
+
+// 工作流程暫停/繼續
+router.put(
+  "/:id/pause",
+  checkPermission(["MANAGE_FLOW_INSTANCES"]),
+  flowInstanceController.pauseInstance
+);
+
+// 工作流程繼續
+router.put(
+  "/:id/resume",
+  checkPermission(["MANAGE_FLOW_INSTANCES"]),
+  flowInstanceController.resumeInstance
+);
+
+// 日誌相關
+router.get(
+  "/:id/logs",
+  checkPermission(["VIEW_FLOW_INSTANCES"]),
+  flowInstanceController.getInstanceLogs
+);
+
+// 節點日誌相關
+router.get(
+  "/:id/nodes/:nodeId/logs",
+  checkPermission(["VIEW_FLOW_INSTANCES"]),
+  flowInstanceController.getNodeLogs
+);
+
+// 版本控制
+router.get(
+  "/:id/versions",
+  checkPermission(["VIEW_FLOW_INSTANCES"]),
+  flowInstanceController.getVersions
+);
+
+// 回滾到指定版本 (!TODO:備著，應該用不上)
+router.post(
+  "/:id/versions/:versionId/rollback",
+  checkPermission(["MANAGE_FLOW_INSTANCES"]),
+  flowInstanceController.rollbackToVersion
+);
+//#endregion
 module.exports = router;
