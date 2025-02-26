@@ -56,16 +56,20 @@ app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocs));
 const authRoutes = require("./routes/authRoutes");
 const userRoutes = require("./routes/userRoutes");
 const projectRoutes = require("./routes/projectRoutes");
+const flowNodeDefinitionRoutes = require("./routes/flowNodeDefinitionRoutes");
 const flowTemplateRoutes = require("./routes/flowTemplateRoutes");
 const flowInstanceRoutes = require("./routes/flowInstanceRoutes");
+const flowDocumentRoutes = require("./routes/flowDocumentRoutes");
 const externalApiRoutes = require("./routes/externalApiRoutes");
 
 // 註冊路由
 app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/projects", projectRoutes);
+app.use("/api/flow-node-definitions", flowNodeDefinitionRoutes);
 app.use("/api/flow-templates", flowTemplateRoutes);
 app.use("/api/flow-instances", flowInstanceRoutes);
+app.use("/api/flow-documents", flowDocumentRoutes);
 app.use("/api/external", externalApiRoutes);
 
 // 錯誤處理中間件

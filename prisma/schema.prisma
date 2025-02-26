@@ -396,6 +396,30 @@ model FlowInstance {
   /// }
   context Json @default(dbgenerated("(JSON_OBJECT())"))
 
+  /// 節點數據（存儲每個節點的配置和狀態）
+  /// 示例：
+  /// {
+  ///   [nodeId: string]: {
+  ///     type: string      // 節點類型
+  ///     label: string     // 節點標籤
+  ///     config: object    // 節點配置
+  ///     complaintId: string // 客訴單號
+  ///     complaintDetail: object // 客訴詳情
+  ///   }
+  /// }
+  nodeData Json? @default(dbgenerated("(JSON_OBJECT())"))
+
+  /// 節點上下文（存儲節點執行結果）
+  /// 示例：
+  /// {
+  ///   [nodeId: string]: {
+  ///     input: any        // 節點輸入數據
+  ///     output: any       // 節點輸出數據
+  ///     executionTime: number // 執行時間（秒）
+  ///   }
+  /// }
+  nodeContext Json? @default(dbgenerated("(JSON_OBJECT())"))
+
   /// 節點狀態（記錄每個節點的執行狀態）
   /// 示例：
   /// {

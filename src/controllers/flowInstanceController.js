@@ -190,7 +190,7 @@ const createInstance = async (req, res) => {
 const updateInstance = async (req, res) => {
   try {
     const { id } = req.params;
-    const { context, nodes, edges } = req.body;
+    const { context, nodes, edges, nodeData, nodeStates, logs } = req.body;
     const userId = req.user.id;
 
     const instance = await prisma.flowInstance.findUnique({
@@ -201,9 +201,13 @@ const updateInstance = async (req, res) => {
       return errorResponse(res, 404, "流程實例不存在");
     }
 
-    // 只有草稿狀態可以更新
-    if (instance.status !== "draft") {
-      return errorResponse(res, 400, "只有草稿狀態的流程實例可以更新");
+    // 如果是更新節點數據或狀態，則允許在任何狀態下更新
+    const isDataUpdate =
+      nodeData !== undefined || nodeStates !== undefined || logs !== undefined;
+
+    // 只有草稿狀態可以更新結構（節點和邊）
+    if (!isDataUpdate && instance.status !== "draft") {
+      return errorResponse(res, 400, "只有草稿狀態的流程實例可以更新結構");
     }
 
     const updatedInstance = await prisma.flowInstance.update({
@@ -212,14 +216,20 @@ const updateInstance = async (req, res) => {
         context: context || instance.context,
         nodes: nodes || instance.nodes,
         edges: edges || instance.edges,
+        nodeData: nodeData || instance.nodeData,
+        nodeStates: nodeStates || instance.nodeStates,
+        logs: logs
+          ? {
+              push: logs,
+            }
+          : {
+              push: {
+                type: "SYSTEM",
+                message: "流程實例已更新",
+                timestamp: new Date().toISOString(),
+              },
+            },
         updatedBy: userId,
-        logs: {
-          push: {
-            type: "SYSTEM",
-            message: "流程實例已更新",
-            timestamp: new Date().toISOString(),
-          },
-        },
       },
       include: {
         project: {
@@ -474,11 +484,26 @@ const executeNodeLogic = async (node, input, context) => {
  * @param {function} next - 下一個中間件
  * @returns {Promise<void>}
  */
-exports.executeNode = asyncHandler(async (req, res, next) => {
-  const { instanceId, nodeId } = req.params;
-  const input = req.body;
+const executeNode = asyncHandler(async (req, res, next) => {
+  const { id: instanceId, nodeId } = req.params;
+  const input = req.body || {};
 
-  console.log(`執行節點 ${nodeId}，輸入數據:`, input);
+  console.log(`執行節點請求 - 實例ID: ${instanceId}, 節點ID: ${nodeId}`);
+  console.log("輸入數據:", JSON.stringify(input, null, 2));
+
+  if (!instanceId) {
+    return errorResponse(res, 400, "缺少流程實例ID");
+  }
+
+  if (!nodeId) {
+    return errorResponse(res, 400, "缺少節點ID");
+  }
+
+  // 檢查輸入數據是否為空
+  if (!input || Object.keys(input).length === 0) {
+    console.error("輸入數據為空");
+    return errorResponse(res, 400, "輸入數據不能為空");
+  }
 
   try {
     // 使用事務確保數據一致性
@@ -487,7 +512,13 @@ exports.executeNode = asyncHandler(async (req, res, next) => {
       const flowInstance = await prisma.flowInstance.findUnique({
         where: { id: instanceId },
         include: {
-          flow: true,
+          template: {
+            select: {
+              name: true,
+              nodes: true,
+              edges: true,
+            },
+          },
         },
       });
 
@@ -497,14 +528,21 @@ exports.executeNode = asyncHandler(async (req, res, next) => {
 
       // 獲取節點數據
       const nodeData = flowInstance.nodeData?.[nodeId] || {};
-      console.log("節點數據:", nodeData);
+      console.log("節點數據:", JSON.stringify(nodeData, null, 2));
 
       // 合併節點數據和輸入數據
       const mergedInput = {
         ...nodeData,
         ...input,
       };
-      console.log("合併後的輸入數據:", mergedInput);
+      console.log("合併後的輸入數據:", JSON.stringify(mergedInput, null, 2));
+
+      // 確保客訴單號被正確傳遞
+      const complaintId = mergedInput.complaintId || input.complaintId;
+      const complaintDetail =
+        mergedInput.complaintDetail || input.complaintDetail;
+
+      console.log(`客訴單號: ${complaintId}, 客訴詳情:`, complaintDetail);
 
       // 獲取節點類型
       let nodeType = mergedInput.nodeType || nodeData.type;
@@ -512,8 +550,8 @@ exports.executeNode = asyncHandler(async (req, res, next) => {
       // 如果沒有節點類型，嘗試從節點數據中獲取
       if (!nodeType) {
         // 從流程定義中獲取節點
-        const flowDefinition = flowInstance.flow.definition;
-        const node = flowDefinition.nodes.find((n) => n.id === nodeId);
+        const templateNodes = flowInstance.template?.nodes || [];
+        const node = templateNodes.find((n) => n.id === nodeId);
 
         if (node) {
           nodeType = node.type || node.data?.type;
@@ -558,6 +596,8 @@ exports.executeNode = asyncHandler(async (req, res, next) => {
               ...nodeData,
               ...input,
               type: nodeType, // 確保保存節點類型
+              complaintId, // 確保保存客訴單號
+              complaintDetail, // 確保保存客訴詳情
             },
           },
         },
@@ -571,9 +611,17 @@ exports.executeNode = asyncHandler(async (req, res, next) => {
           {
             id: nodeId,
             type: nodeType,
-            data: mergedInput,
+            data: {
+              ...mergedInput,
+              complaintId, // 確保傳遞客訴單號
+              complaintDetail, // 確保傳遞客訴詳情
+            },
           },
-          mergedInput,
+          {
+            ...mergedInput,
+            complaintId, // 確保傳遞客訴單號
+            complaintDetail, // 確保傳遞客訴詳情
+          },
           { flowInstance }
         );
         const endTime = Date.now();
@@ -596,7 +644,11 @@ exports.executeNode = asyncHandler(async (req, res, next) => {
         const nodeContext = {
           ...flowInstance.nodeContext,
           [nodeId]: {
-            input: mergedInput,
+            input: {
+              ...mergedInput,
+              complaintId, // 確保保存客訴單號
+              complaintDetail, // 確保保存客訴詳情
+            },
             output: result,
             executionTime,
           },
@@ -615,7 +667,8 @@ exports.executeNode = asyncHandler(async (req, res, next) => {
                 ...nodeData,
                 ...input,
                 type: nodeType,
-                complaintId: input.complaintId, // 確保保存客訴單號
+                complaintId, // 確保保存客訴單號
+                complaintDetail, // 確保保存客訴詳情
               },
             },
           },
@@ -670,7 +723,8 @@ exports.executeNode = asyncHandler(async (req, res, next) => {
                 ...nodeData,
                 ...input,
                 type: nodeType,
-                complaintId: input.complaintId, // 確保保存客訴單號
+                complaintId, // 確保保存客訴單號
+                complaintDetail, // 確保保存客訴詳情
               },
             },
           },
@@ -681,13 +735,10 @@ exports.executeNode = asyncHandler(async (req, res, next) => {
     });
 
     // 返回成功響應
-    return successResponse(res, {
-      message: "節點執行成功",
-      data: result,
-    });
+    return successResponse(res, 200, result, "節點執行成功");
   } catch (error) {
     console.error("執行節點時發生錯誤:", error);
-    return next(error);
+    return errorResponse(res, 500, "執行節點時發生錯誤", error);
   }
 });
 

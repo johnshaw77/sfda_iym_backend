@@ -2,7 +2,7 @@ const express = require("express");
 const router = express.Router();
 const externalApiService = require("../services/externalApiService");
 const { asyncHandler } = require("../utils/asyncHandler");
-const { validateRequest } = require("../middleware/validateRequest");
+const { validateRequest } = require("../middlewares/validateRequest");
 const Joi = require("joi");
 
 /**

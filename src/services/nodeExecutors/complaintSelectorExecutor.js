@@ -14,14 +14,22 @@ class ComplaintSelectorExecutor {
     try {
       console.log("執行客訴選擇器節點:", node.id);
       console.log("輸入數據:", input);
+      console.log("節點數據:", node.data);
 
-      // 驗證輸入數據
-      if (!input || !input.complaintId) {
-        throw new Error("缺少必要的客訴單號");
+      // 從輸入數據或節點數據中獲取客訴單號
+      let complaintId = input.complaintId;
+      let complaintDetail = input.complaintDetail;
+
+      // 如果輸入數據中沒有客訴單號，嘗試從節點數據中獲取
+      if (!complaintId && node.data) {
+        complaintId = node.data.complaintId;
+        complaintDetail = node.data.complaintDetail;
       }
 
-      // 獲取客訴單號和詳情
-      const { complaintId, complaintDetail } = input;
+      // 驗證輸入數據
+      if (!complaintId) {
+        throw new Error("缺少必要的客訴單號");
+      }
 
       // 這裡可以添加實際的業務邏輯，例如從數據庫獲取更詳細的客訴信息
       // 或者進行其他處理
