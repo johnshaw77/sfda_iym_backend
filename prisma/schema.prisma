@@ -35,12 +35,7 @@ model User {
   createdProjects Project[] @relation("CreatedProjects")
   updatedProjects Project[] @relation("UpdatedProjects")
 
-  // 工作流程關聯
-  createdWorkflows         Workflow[]         @relation("CreatedWorkflows")
-  updatedWorkflows         Workflow[]         @relation("UpdatedWorkflows")
-  createdWorkflowTemplates WorkflowTemplate[] @relation("CreatedWorkflowTemplates")
-  createdWorkflowInstances WorkflowInstance[] @relation("CreatedWorkflowInstances")
-  uploadedFiles            FileNode[]         @relation("UploadedFiles")
+  uploadedFiles FileNode[] @relation("UploadedFiles")
 
   // 新增關聯
   createdFlowNodeDefinitions FlowNodeDefinition[] @relation("CreatedFlowNodeDefinitions")
@@ -161,313 +156,12 @@ model Project {
   updatedAt     DateTime @updatedAt
 
   // 關聯
-  creator           User               @relation("CreatedProjects", fields: [createdBy], references: [id])
-  updater           User               @relation("UpdatedProjects", fields: [updatedBy], references: [id])
-  workflowInstances WorkflowInstance[]
-  FlowInstance      FlowInstance[]
-  FlowDocument      FlowDocument[]
+  creator      User           @relation("CreatedProjects", fields: [createdBy], references: [id])
+  updater      User           @relation("UpdatedProjects", fields: [updatedBy], references: [id])
+  FlowInstance FlowInstance[]
+  FlowDocument FlowDocument[]
 
   @@map("Project")
-}
-
-/// 工作流程模型 !TODO: Remove this model
-model Workflow {
-  /// 工作流程唯一識別碼
-  id          String   @id @default(uuid())
-  /// 工作流程名稱
-  name        String
-  /// 工作流程描述
-  description String?
-  /// 工作流程狀態（draft、active、completed、archived）
-  status      String   @default("draft")
-  /// 創建者ID
-  createdBy   String
-  /// 最後更新者ID
-  updatedBy   String
-  /// 創建時間
-  createdAt   DateTime @default(now())
-  /// 最後更新時間
-  updatedAt   DateTime @updatedAt
-
-  // 關聯
-  files   File[]
-  creator User   @relation("CreatedWorkflows", fields: [createdBy], references: [id])
-  updater User   @relation("UpdatedWorkflows", fields: [updatedBy], references: [id])
-
-  @@map("Workflow")
-}
-
-/// 檔案模型 !TODO: Remove this model
-model File {
-  /// 檔案唯一識別碼
-  id            String   @id @default(uuid())
-  /// 檔案名稱（存儲後的名稱）
-  fileName      String
-  /// 原始檔案名稱
-  originalname  String
-  /// 檔案存儲路徑
-  fileUrl       String
-  /// 檔案大小（bytes）
-  fileSize      Int
-  /// 檔案類型（MIME type）
-  fileType      String
-  /// 縮圖路徑
-  thumbnailPath String?
-  /// 關聯的工作流程ID
-  workflowId    String?
-  /// 檔案狀態（pending、processing、completed、error）
-  status        String   @default("pending")
-  /// 檔案元數據（JSON字串）
-  metadata      String?
-  /// 創建時間
-  createdAt     DateTime @default(now())
-  /// 最後更新時間
-  updatedAt     DateTime @updatedAt
-
-  // 關聯
-  workflow Workflow? @relation(fields: [workflowId], references: [id])
-
-  @@map("File")
-}
-
-model NodeDefinition {
-  /// 主鍵
-  id            String   @id @default(uuid())
-  /// 節點定義鍵值
-  definitionKey String   @unique
-  /// 節點類型（custom-input | custom-process | statistic-process）
-  nodeType      String   @default("custom-process")
-  /// 業務分類
-  category      String
-  /// 節點名稱（必填）
-  name          String
-  /// 節點描述（必填）
-  description   String
-  /// Vue 組件名稱
-  componentName String?
-  /// Vue 組件路徑（選填）
-  componentPath String?
-  /// 版本號（預設 1.0.0）
-  version       String   @default("1.0.0")
-  /// API 端點
-  apiEndpoint   String?
-  /// API 方法
-  apiMethod     String?
-  /// 預設配置（JSON 字串，選填）
-  config        String   @default("{}")
-  /// UI 配置（JSON 字串，選填）
-  uiConfig      String   @default("{}")
-  /// 驗證規則（JSON 字串，選填）
-  validation    String   @default("{}")
-  /// 連接點配置（JSON 字串）
-  handles       String   @default("{}")
-  /// 創建時間
-  createdAt     DateTime @default(now())
-  /// 最後更新時間
-  updatedAt     DateTime @updatedAt
-
-  // 關聯
-  nodeTemplates NodeTemplate[]
-  nodeInstances NodeInstance[]
-
-  @@map("NodeDefinition")
-}
-
-model WorkflowTemplate {
-  /// 工作流程範本唯一識別碼
-  id               String   @id @default(uuid())
-  /// 範本名稱
-  templateName     String
-  /// 範本分類（客訴分析、良率分析等）
-  templateCategory String
-  /// 範本描述
-  description      String?
-  /// 版本號
-  version          String
-  /// 範本狀態（draft、published、deprecated）
-  status           String   @default("draft")
-  /// 範本配置（JSON字串）
-  config           String? // JSON string
-  /// 創建者ID
-  createdBy        String
-  /// 創建時間
-  createdAt        DateTime @default(now())
-  /// 最後更新時間
-  updatedAt        DateTime @updatedAt
-
-  // 關聯
-  creator             User                     @relation("CreatedWorkflowTemplates", fields: [createdBy], references: [id])
-  nodeTemplates       NodeTemplate[]
-  templateConnections NodeTemplateConnection[]
-  workflowInstances   WorkflowInstance[]
-
-  @@map("WorkflowTemplate")
-}
-
-model NodeTemplate {
-  /// 節點範本唯一識別碼
-  id                 String   @id @default(uuid())
-  /// 所屬工作流程範本ID
-  workflowTemplateId String
-  /// 節點類型ID
-  nodeTypeId         String
-  /// 節點名稱
-  nodeName           String
-  /// X軸座標位置
-  positionX          Int
-  /// Y軸座標位置
-  positionY          Int
-  /// 節點配置（JSON字串）
-  config             String? // JSON string
-  /// 節點樣式（JSON字串）
-  style              String? // JSON string
-  /// 創建時間
-  createdAt          DateTime @default(now())
-  /// 最後更新時間
-  updatedAt          DateTime @updatedAt
-
-  // 關聯
-  workflowTemplate  WorkflowTemplate         @relation(fields: [workflowTemplateId], references: [id])
-  nodeType          NodeDefinition           @relation(fields: [nodeTypeId], references: [id])
-  sourceConnections NodeTemplateConnection[] @relation("SourceNodeTemplate")
-  targetConnections NodeTemplateConnection[] @relation("TargetNodeTemplate")
-  nodeInstances     NodeInstance[]
-
-  @@map("NodeTemplate")
-}
-
-model NodeTemplateConnection {
-  /// 節點連接範本唯一識別碼
-  id                 String   @id @default(uuid())
-  /// 所屬工作流程範本ID
-  workflowTemplateId String
-  /// 來源節點ID
-  sourceNodeId       String
-  /// 目標節點ID
-  targetNodeId       String
-  /// 連接線類型
-  edgeType           String
-  /// 連接線標籤
-  label              String?
-  /// 連接條件（JSON字串）
-  condition          String? // JSON string
-  /// 連接線樣式（JSON字串）
-  style              String? // JSON string
-  /// 數據映射配置（JSON字串）
-  mappingConfig      String? // JSON string
-  /// 創建時間
-  createdAt          DateTime @default(now())
-  /// 最後更新時間
-  updatedAt          DateTime @updatedAt
-
-  // 關聯
-  workflowTemplate    WorkflowTemplate         @relation(fields: [workflowTemplateId], references: [id])
-  sourceNode          NodeTemplate             @relation("SourceNodeTemplate", fields: [sourceNodeId], references: [id])
-  targetNode          NodeTemplate             @relation("TargetNodeTemplate", fields: [targetNodeId], references: [id])
-  instanceConnections NodeInstanceConnection[]
-
-  @@map("NodeTemplateConnection")
-}
-
-model WorkflowInstance {
-  /// 工作流程實例唯一識別碼
-  id               String    @id @default(uuid())
-  /// 關聯的工作流程範本ID
-  templateId       String
-  /// 關聯的專案ID
-  projectId        String
-  /// 實例名稱
-  instanceName     String
-  /// 執行狀態（draft、running、completed、failed）
-  status           String    @default("draft")
-  /// 開始執行時間
-  startTime        DateTime?
-  /// 結束執行時間
-  endTime          DateTime?
-  /// 發起人ID
-  initiator        String
-  /// 初始數據（JSON字串）
-  initialData      String? // JSON string
-  /// 執行上下文（JSON字串）
-  executionContext String? // JSON string
-  /// 創建時間
-  createdAt        DateTime  @default(now())
-  /// 最後更新時間
-  updatedAt        DateTime  @updatedAt
-
-  // 關聯
-  template            WorkflowTemplate         @relation(fields: [templateId], references: [id])
-  project             Project                  @relation(fields: [projectId], references: [id])
-  creator             User                     @relation("CreatedWorkflowInstances", fields: [initiator], references: [id])
-  nodeInstances       NodeInstance[]
-  instanceConnections NodeInstanceConnection[]
-  fileNodes           FileNode[]
-
-  @@map("WorkflowInstance")
-}
-
-model NodeInstance {
-  /// 節點實例唯一識別碼
-  id                 String    @id @default(uuid())
-  /// 所屬工作流程實例ID
-  workflowInstanceId String
-  /// 關聯的節點範本ID
-  nodeTemplateId     String
-  /// 關聯的節點定義ID
-  nodeDefinitionId   String
-  /// 執行狀態（pending、running、completed、failed）
-  status             String
-  /// 開始執行時間
-  startTime          DateTime?
-  /// 結束執行時間
-  endTime            DateTime?
-  /// 重試次數
-  retryCount         Int       @default(0)
-  /// 錯誤訊息
-  errorMessage       String?
-  /// 創建時間
-  createdAt          DateTime  @default(now())
-  /// 最後更新時間
-  updatedAt          DateTime  @updatedAt
-
-  // 關聯
-  workflowInstance  WorkflowInstance         @relation(fields: [workflowInstanceId], references: [id])
-  nodeTemplate      NodeTemplate             @relation(fields: [nodeTemplateId], references: [id])
-  nodeDefinition    NodeDefinition           @relation(fields: [nodeDefinitionId], references: [id])
-  sourceConnections NodeInstanceConnection[] @relation("SourceNodeInstance")
-  targetConnections NodeInstanceConnection[] @relation("TargetNodeInstance")
-  dataSnapshots     DataSnapshot[]
-
-  @@map("NodeInstance")
-}
-
-model NodeInstanceConnection {
-  /// 節點連接實例唯一識別碼
-  id                   String    @id @default(uuid())
-  /// 所屬工作流程實例ID
-  workflowInstanceId   String
-  /// 關聯的範本連接ID
-  templateConnectionId String
-  /// 來源節點實例ID
-  sourceNodeId         String
-  /// 目標節點實例ID
-  targetNodeId         String
-  /// 執行狀態（pending、completed、failed）
-  status               String
-  /// 執行時間
-  executedAt           DateTime?
-  /// 創建時間
-  createdAt            DateTime  @default(now())
-  /// 最後更新時間
-  updatedAt            DateTime  @updatedAt
-
-  // 關聯
-  workflowInstance   WorkflowInstance       @relation(fields: [workflowInstanceId], references: [id])
-  templateConnection NodeTemplateConnection @relation(fields: [templateConnectionId], references: [id])
-  sourceNode         NodeInstance           @relation("SourceNodeInstance", fields: [sourceNodeId], references: [id])
-  targetNode         NodeInstance           @relation("TargetNodeInstance", fields: [targetNodeId], references: [id])
-
-  @@map("NodeInstanceConnection")
 }
 
 model DataSnapshot {
@@ -484,49 +178,46 @@ model DataSnapshot {
   /// 創建時間
   createdAt      DateTime @default(now())
 
-  // 關聯
-  nodeInstance NodeInstance @relation(fields: [nodeInstanceId], references: [id])
-
   @@map("DataSnapshot")
 }
 
 model FileNode {
   /// 檔案節點唯一識別碼
-  id                 String   @id @default(uuid())
+  id             String   @id @default(uuid())
   /// 所屬工作流程實例ID
-  workflowInstanceId String
+  flowInstanceId String
   /// 檔案名稱
-  fileName           String
+  fileName       String
   /// 原始檔案名稱
-  originalName       String
+  originalName   String
   /// 檔案存儲路徑
-  fileUrl            String
+  fileUrl        String
   /// 檔案大小（bytes）
-  fileSize           Int
+  fileSize       Int
   /// 縮圖路徑
-  thumbnailPath      String?
+  thumbnailPath  String?
   /// 檔案類型（結案報告、不良照片等）
-  fileType           String
+  fileType       String
   /// 檔案狀態（pending、processing、completed、error）
-  status             String   @default("pending")
+  status         String   @default("pending")
   /// X軸座標位置
-  positionX          Int
+  positionX      Int
   /// Y軸座標位置
-  positionY          Int
+  positionY      Int
   /// 節點樣式（JSON字串）
-  style              String? // JSON string
+  style          String? // JSON string
   /// 檔案描述
-  description        String?
+  description    String?
   /// 上傳者ID
-  uploadedBy         String
+  uploadedBy     String
   /// 創建時間
-  createdAt          DateTime @default(now())
+  createdAt      DateTime @default(now())
   /// 最後更新時間
-  updatedAt          DateTime @updatedAt
+  updatedAt      DateTime @updatedAt
 
   // 關聯
-  workflowInstance WorkflowInstance @relation(fields: [workflowInstanceId], references: [id])
-  uploader         User             @relation("UploadedFiles", fields: [uploadedBy], references: [id])
+  flowInstance FlowInstance @relation(fields: [flowInstanceId], references: [id])
+  uploader     User         @relation("UploadedFiles", fields: [uploadedBy], references: [id])
 
   @@map("FileNode")
 }
@@ -656,21 +347,90 @@ model FlowTemplate {
   @@map("FlowTemplate")
 }
 
+/// 工作流程實例
 model FlowInstance {
-  /// 主鍵
-  id         String @id @default(uuid())
+  /// 流程實例唯一識別碼
+  id String @id @default(uuid())
+
   /// 關聯的專案ID
   projectId  String
   /// 關聯的模板ID
   templateId String
-  /// 實例狀態（draft、running、completed、failed）
-  status     String @default("draft")
-  /// 工作流上下文
-  context    Json   @default(dbgenerated("(JSON_OBJECT())"))
-  /// 節點實例狀態
-  nodes      Json   @default(dbgenerated("(JSON_ARRAY())"))
-  /// 實際執行的邊緣狀態
-  edges      Json   @default(dbgenerated("(JSON_ARRAY())"))
+
+  /// 實例狀態 (draft, running, paused, completed, failed, stopped)
+  status String @default("draft")
+
+  /// 節點定義（包含位置、配置等）
+  /// 示例：
+  /// {
+  ///   id: string          // 節點唯一識別碼
+  ///   type: string        // 節點類型
+  ///   position: {x, y}    // 節點位置
+  ///   data: {            // 節點數據
+  ///     label: string     // 節點標籤
+  ///     config: object    // 節點配置
+  ///   }
+  /// }[]
+  nodes Json @default(dbgenerated("(JSON_ARRAY())"))
+
+  /// 連線定義
+  /// 示例：
+  /// {
+  ///   id: string          // 連線唯一識別碼
+  ///   source: string      // 來源節點ID
+  ///   target: string      // 目標節點ID
+  ///   sourceHandle: string // 來源連接點
+  ///   targetHandle: string // 目標連接點
+  /// }[]
+  edges Json @default(dbgenerated("(JSON_ARRAY())"))
+
+  /// 執行上下文（存儲節點間的數據傳遞）
+  /// 示例：
+  /// {
+  ///   [nodeId: string]: {
+  ///     input: any        // 節點輸入數據
+  ///     output: any       // 節點輸出數據
+  ///     startTime: string // 開始時間
+  ///     endTime: string   // 結束時間
+  ///   }
+  /// }
+  context Json @default(dbgenerated("(JSON_OBJECT())"))
+
+  /// 節點狀態（記錄每個節點的執行狀態）
+  /// 示例：
+  /// {
+  ///   [nodeId: string]: {
+  ///     status: string    // idle, running, completed, failed
+  ///     startTime: string // 開始時間
+  ///     endTime: string   // 結束時間
+  ///     error: string     // 錯誤信息
+  ///   }
+  /// }
+  nodeStates Json? @default(dbgenerated("(JSON_OBJECT())"))
+
+  /// 執行日誌
+  /// 示例：
+  /// {
+  ///   type: string        // SYSTEM, NODE, ERROR
+  ///   nodeId?: string     // 相關節點ID
+  ///   message: string     // 日誌信息
+  ///   timestamp: string   // 時間戳
+  ///   data?: any         // 額外數據
+  /// }[]
+  logs Json? @default(dbgenerated("(JSON_ARRAY())"))
+
+  /// 最後執行的節點ID（用於恢復執行）!TODO: 備著，應該用不上
+  lastNodeId String?
+
+  /// 錯誤信息（當 status 為 failed 時）
+  error String?
+
+  /// 開始執行時間
+  startedAt DateTime?
+  /// 完成時間
+  endedAt   DateTime?
+  /// 暫停時間
+  pausedAt  DateTime?
 
   /// 創建者ID
   createdBy String
@@ -678,16 +438,21 @@ model FlowInstance {
   updatedBy String
   /// 創建時間
   createdAt DateTime @default(now())
-  /// 最後更新時間
+  /// 更新時間
   updatedAt DateTime @updatedAt
 
   // 關聯
   project   Project        @relation(fields: [projectId], references: [id])
   template  FlowTemplate   @relation(fields: [templateId], references: [id])
+  fileNodes FileNode[]
   creator   User           @relation("CreatedFlowInstances", fields: [createdBy], references: [id])
   updater   User           @relation("UpdatedFlowInstances", fields: [updatedBy], references: [id])
   documents FlowDocument[]
 
+  @@index([projectId])
+  @@index([templateId])
+  @@index([status])
+  @@index([createdBy])
   @@map("FlowInstance")
 }
 

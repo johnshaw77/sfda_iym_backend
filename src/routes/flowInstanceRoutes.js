@@ -13,11 +13,12 @@ const flowInstanceController = require("../controllers/flowInstanceController");
  *       required:
  *         - projectId
  *         - templateId
+ *         - nodes
+ *         - edges
  *       properties:
  *         id:
  *           type: string
  *           description: 流程實例的唯一識別碼
- *           example: 1
  *         projectId:
  *           type: string
  *           description: 關聯的專案ID
@@ -26,18 +27,69 @@ const flowInstanceController = require("../controllers/flowInstanceController");
  *           description: 關聯的流程模板ID
  *         status:
  *           type: string
+ *           enum: [draft, running, paused, completed, failed, stopped]
+ *           default: draft
  *           description: 實例狀態
- *           enum: [draft, running, completed, failed]
- *           example: draft
- *         context:
- *           type: object
- *           description: 工作流上下文
  *         nodes:
  *           type: array
- *           description: 節點實例狀態
+ *           description: 節點定義（包含位置、配置等）
+ *           items:
+ *             type: object
+ *             properties:
+ *               id:
+ *                 type: string
+ *                 description: 節點唯一識別碼
+ *               type:
+ *                 type: string
+ *                 description: 節點類型
+ *               position:
+ *                 type: object
+ *                 description: 節點位置
+ *               data:
+ *                 type: object
+ *                 description: 節點數據
  *         edges:
  *           type: array
- *           description: 實際執行的邊緣狀態
+ *           description: 連線定義
+ *           items:
+ *             type: object
+ *             properties:
+ *               id:
+ *                 type: string
+ *                 description: 連線唯一識別碼
+ *               source:
+ *                 type: string
+ *                 description: 來源節點ID
+ *               target:
+ *                 type: string
+ *                 description: 目標節點ID
+ *         context:
+ *           type: object
+ *           description: 執行上下文（存儲節點間的數據傳遞）
+ *         nodeStates:
+ *           type: object
+ *           description: 節點狀態（記錄每個節點的執行狀態）
+ *         logs:
+ *           type: array
+ *           description: 執行日誌
+ *         lastNodeId:
+ *           type: string
+ *           description: 最後執行的節點ID
+ *         error:
+ *           type: string
+ *           description: 錯誤信息
+ *         startedAt:
+ *           type: string
+ *           format: date-time
+ *           description: 開始執行時間
+ *         endedAt:
+ *           type: string
+ *           format: date-time
+ *           description: 完成時間
+ *         pausedAt:
+ *           type: string
+ *           format: date-time
+ *           description: 暫停時間
  *         createdBy:
  *           type: string
  *           description: 創建者ID
@@ -75,6 +127,7 @@ router.use(authenticateToken);
  *         name: status
  *         schema:
  *           type: string
+ *           enum: [draft, running, paused, completed, failed, stopped]
  *         description: 按狀態過濾
  *     responses:
  *       200:
@@ -85,10 +138,6 @@ router.use(authenticateToken);
  *               type: array
  *               items:
  *                 $ref: '#/components/schemas/FlowInstance'
- *       401:
- *         description: 未授權
- *       403:
- *         description: 權限不足
  */
 router.get(
   "/",
@@ -118,8 +167,6 @@ router.get(
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/FlowInstance'
- *       404:
- *         description: 流程實例不存在
  */
 router.get(
   "/:id",
@@ -140,7 +187,21 @@ router.get(
  *       content:
  *         application/json:
  *           schema:
- *             $ref: '#/components/schemas/FlowInstance'
+ *             type: object
+ *             required:
+ *               - projectId
+ *               - templateId
+ *               - nodes
+ *               - edges
+ *             properties:
+ *               projectId:
+ *                 type: string
+ *               templateId:
+ *                 type: string
+ *               nodes:
+ *                 type: array
+ *               edges:
+ *                 type: array
  *     responses:
  *       201:
  *         description: 流程實例創建成功
@@ -148,12 +209,6 @@ router.get(
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/FlowInstance'
- *       400:
- *         description: 請求資料驗證失敗
- *       401:
- *         description: 未授權
- *       403:
- *         description: 權限不足
  */
 router.post(
   "/",
@@ -175,60 +230,25 @@ router.post(
  *         required: true
  *         schema:
  *           type: string
- *         description: 流程實例ID
  *     requestBody:
  *       required: true
  *       content:
  *         application/json:
  *           schema:
- *             $ref: '#/components/schemas/FlowInstance'
+ *             type: object
+ *             properties:
+ *               nodes:
+ *                 type: array
+ *               edges:
+ *                 type: array
  *     responses:
  *       200:
  *         description: 流程實例更新成功
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/FlowInstance'
- *       400:
- *         description: 請求資料驗證失敗
- *       404:
- *         description: 流程實例不存在
  */
 router.put(
   "/:id",
   checkPermission(["MANAGE_FLOW_INSTANCES"]),
   flowInstanceController.updateInstance
-);
-
-/**
- * @swagger
- * /api/flow-instances/{id}:
- *   delete:
- *     summary: 刪除流程實例
- *     tags: [FlowInstances]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: string
- *         description: 流程實例ID
- *     responses:
- *       200:
- *         description: 流程實例刪除成功
- *       404:
- *         description: 流程實例不存在
- *       401:
- *         description: 未授權
- *       403:
- *         description: 權限不足
- */
-router.delete(
-  "/:id",
-  checkPermission(["MANAGE_FLOW_INSTANCES"]),
-  flowInstanceController.deleteInstance
 );
 
 /**
@@ -245,21 +265,62 @@ router.delete(
  *         required: true
  *         schema:
  *           type: string
- *         description: 流程實例ID
  *     responses:
  *       200:
  *         description: 流程實例啟動成功
- *       404:
- *         description: 流程實例不存在
- *       401:
- *         description: 未授權
- *       403:
- *         description: 權限不足
  */
 router.put(
   "/:id/start",
   checkPermission(["MANAGE_FLOW_INSTANCES"]),
   flowInstanceController.startInstance
+);
+
+/**
+ * @swagger
+ * /api/flow-instances/{id}/pause:
+ *   put:
+ *     summary: 暫停流程實例
+ *     tags: [FlowInstances]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: 流程實例暫停成功
+ */
+router.put(
+  "/:id/pause",
+  checkPermission(["MANAGE_FLOW_INSTANCES"]),
+  flowInstanceController.pauseInstance
+);
+
+/**
+ * @swagger
+ * /api/flow-instances/{id}/resume:
+ *   put:
+ *     summary: 繼續執行流程實例
+ *     tags: [FlowInstances]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: 流程實例繼續執行成功
+ */
+router.put(
+  "/:id/resume",
+  checkPermission(["MANAGE_FLOW_INSTANCES"]),
+  flowInstanceController.resumeInstance
 );
 
 /**
@@ -276,16 +337,9 @@ router.put(
  *         required: true
  *         schema:
  *           type: string
- *         description: 流程實例ID
  *     responses:
  *       200:
  *         description: 流程實例停止成功
- *       404:
- *         description: 流程實例不存在
- *       401:
- *         description: 未授權
- *       403:
- *         description: 權限不足
  */
 router.put(
   "/:id/stop",
@@ -293,61 +347,114 @@ router.put(
   flowInstanceController.stopInstance
 );
 
-//#region 工作流實例-流轉處理
-// 節點執行相關
+/**
+ * @swagger
+ * /api/flow-instances/{id}/nodes/{nodeId}/execute:
+ *   post:
+ *     summary: 執行節點
+ *     tags: [FlowInstances]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: 流程實例ID
+ *       - in: path
+ *         name: nodeId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: 節點ID
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               input:
+ *                 type: object
+ *                 description: 節點輸入數據
+ *     responses:
+ *       200:
+ *         description: 節點執行成功
+ */
 router.post(
   "/:id/nodes/:nodeId/execute",
   checkPermission(["MANAGE_FLOW_INSTANCES"]),
   flowInstanceController.executeNode
 );
 
-// 節點狀態相關
-router.get(
-  "/:id/nodes/:nodeId/status",
-  checkPermission(["VIEW_FLOW_INSTANCES"]),
-  flowInstanceController.getNodeStatus
-);
-
-// 工作流程暫停/繼續
-router.put(
-  "/:id/pause",
-  checkPermission(["MANAGE_FLOW_INSTANCES"]),
-  flowInstanceController.pauseInstance
-);
-
-// 工作流程繼續
-router.put(
-  "/:id/resume",
-  checkPermission(["MANAGE_FLOW_INSTANCES"]),
-  flowInstanceController.resumeInstance
-);
-
-// 日誌相關
+/**
+ * @swagger
+ * /api/flow-instances/{id}/logs:
+ *   get:
+ *     summary: 獲取實例日誌
+ *     tags: [FlowInstances]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: 成功獲取日誌
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   type:
+ *                     type: string
+ *                   nodeId:
+ *                     type: string
+ *                   message:
+ *                     type: string
+ *                   timestamp:
+ *                     type: string
+ *                     format: date-time
+ */
 router.get(
   "/:id/logs",
   checkPermission(["VIEW_FLOW_INSTANCES"]),
   flowInstanceController.getInstanceLogs
 );
 
-// 節點日誌相關
+/**
+ * @swagger
+ * /api/flow-instances/{id}/nodes/{nodeId}/logs:
+ *   get:
+ *     summary: 獲取節點日誌
+ *     tags: [FlowInstances]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *       - in: path
+ *         name: nodeId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: 成功獲取節點日誌
+ */
 router.get(
   "/:id/nodes/:nodeId/logs",
   checkPermission(["VIEW_FLOW_INSTANCES"]),
   flowInstanceController.getNodeLogs
 );
 
-// 版本控制
-router.get(
-  "/:id/versions",
-  checkPermission(["VIEW_FLOW_INSTANCES"]),
-  flowInstanceController.getVersions
-);
-
-// 回滾到指定版本 (!TODO:備著，應該用不上)
-router.post(
-  "/:id/versions/:versionId/rollback",
-  checkPermission(["MANAGE_FLOW_INSTANCES"]),
-  flowInstanceController.rollbackToVersion
-);
-//#endregion
 module.exports = router;

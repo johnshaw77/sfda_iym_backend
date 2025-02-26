@@ -1,57 +1,52 @@
-const { Prisma } = require('@prisma/client');
-const { logger } = require('./logger');
+const { Prisma } = require("@prisma/client");
+const { logger } = require("./logger");
 
 /**
- * 處理 Prisma 相關錯誤
+ * 處理 Prisma 錯誤
  * @param {Error} error - Prisma 錯誤對象
  * @param {Object} res - Express 響應對象
  */
 const handlePrismaError = (error, res) => {
-  logger.error('Prisma 錯誤:', {
-    name: error.name,
-    message: error.message,
-    code: error.code,
-    stack: error.stack
-  });
+  console.error("Prisma 錯誤:", error);
 
-  if (error instanceof Prisma.PrismaClientKnownRequestError) {
-    switch (error.code) {
-      case 'P2002':
-        return res.status(409).json({
-          message: '資料已存在，違反唯一性約束'
-        });
-      case 'P2014':
-        return res.status(400).json({
-          message: '違反關聯約束'
-        });
-      case 'P2003':
-        return res.status(400).json({
-          message: '外鍵約束失敗'
-        });
-      case 'P2025':
-        return res.status(404).json({
-          message: '找不到要操作的記錄'
-        });
-      default:
-        return res.status(500).json({
-          message: '資料庫操作錯誤'
-        });
-    }
-  }
-
-  if (error instanceof Prisma.PrismaClientValidationError) {
-
+  // 根據錯誤類型返回不同的響應
+  if (error.code === "P2002") {
+    // 唯一約束錯誤
+    return res.status(409).json({
+      success: false,
+      message: "資源已存在",
+      error: `${error.meta?.target?.join(", ")} 已存在`,
+    });
+  } else if (error.code === "P2025") {
+    // 記錄不存在錯誤
+    return res.status(404).json({
+      success: false,
+      message: "資源不存在",
+      error: error.meta?.cause || "請求的資源不存在",
+    });
+  } else if (error.code === "P2003") {
+    // 外鍵約束錯誤
     return res.status(400).json({
-      message: '資料驗證錯誤',
-      details: error.message
+      success: false,
+      message: "外鍵約束錯誤",
+      error: `${error.meta?.field_name} 引用的資源不存在`,
+    });
+  } else if (error.name === "PrismaClientValidationError") {
+    // 驗證錯誤
+    return res.status(400).json({
+      success: false,
+      message: "請求數據無效",
+      error: error.message,
+    });
+  } else {
+    // 其他錯誤
+    return res.status(500).json({
+      success: false,
+      message: "伺服器錯誤",
+      error:
+        process.env.NODE_ENV === "development" ? error.message : "發生內部錯誤",
     });
   }
-
-  return res.status(500).json({
-    message: '伺服器內部錯誤'
-  });
 };
 
-module.exports = {
-  handlePrismaError
-}; 
+module.exports = { handlePrismaError };

@@ -52,22 +52,21 @@ const swaggerOptions = {
 const swaggerDocs = swaggerJsdoc(swaggerOptions);
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocs));
 
-// 路由設置
-app.use("/api/auth", require("./routes/authRoutes"));
-app.use("/api/users", require("./routes/userRoutes"));
-//XX app.use("/api/files", require("./routes/fileRoutes"));
-app.use("/api/rbac", require("./routes/rbacRoutes"));
-app.use("/api/projects", require("./routes/projectRoutes"));
-//XX app.use("/api/workflow-templates", require("./routes/workflowTemplateRoutes"));
-app.use("/api/external", require("./routes/externalApiRoutes"));
-//XX app.use("/api/node-definitions", require("./routes/nodeDefinitionRoutes"));
-app.use(
-  "/api/flow-node-definitions",
-  require("./routes/flowNodeDefinitionRoutes")
-);
-app.use("/api/flow-templates", require("./routes/flowTemplateRoutes"));
-app.use("/api/flow-instances", require("./routes/flowInstanceRoutes"));
-app.use("/api/flow-documents", require("./routes/flowDocumentRoutes"));
+// 導入路由
+const authRoutes = require("./routes/authRoutes");
+const userRoutes = require("./routes/userRoutes");
+const projectRoutes = require("./routes/projectRoutes");
+const flowTemplateRoutes = require("./routes/flowTemplateRoutes");
+const flowInstanceRoutes = require("./routes/flowInstanceRoutes");
+const externalApiRoutes = require("./routes/externalApiRoutes");
+
+// 註冊路由
+app.use("/api/auth", authRoutes);
+app.use("/api/users", userRoutes);
+app.use("/api/projects", projectRoutes);
+app.use("/api/flow-templates", flowTemplateRoutes);
+app.use("/api/flow-instances", flowInstanceRoutes);
+app.use("/api/external", externalApiRoutes);
 
 // 錯誤處理中間件
 app.use(errorHandler);
