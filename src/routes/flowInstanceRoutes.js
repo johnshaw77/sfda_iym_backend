@@ -457,4 +457,38 @@ router.get(
   flowInstanceController.getNodeLogs
 );
 
+/**
+ * @swagger
+ * /api/flow-instances/{id}:
+ *   delete:
+ *     summary: 刪除流程實例
+ *     tags: [FlowInstances]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: 流程實例ID
+ *       - in: query
+ *         name: force
+ *         schema:
+ *           type: boolean
+ *         description: 管理員強制刪除標誌，設為true時允許管理員刪除任何狀態的流程實例
+ *     responses:
+ *       200:
+ *         description: 流程實例刪除成功
+ *       400:
+ *         description: 只有草稿和失敗狀態的流程實例可以刪除，或者需要管理員權限進行強制刪除
+ *       404:
+ *         description: 流程實例不存在
+ */
+router.delete(
+  "/:id",
+  checkPermission(["MANAGE_FLOW_INSTANCES"]),
+  flowInstanceController.deleteInstance
+);
+
 module.exports = router;

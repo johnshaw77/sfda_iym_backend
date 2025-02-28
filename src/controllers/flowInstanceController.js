@@ -266,27 +266,100 @@ const updateInstance = async (req, res) => {
 const deleteInstance = async (req, res) => {
   try {
     const { id } = req.params;
+    const { force } = req.query;
+    const user = req.user;
 
+    // 添加日誌輸出，用於調試
+    console.log("用戶資訊:", {
+      userId: user.id,
+      force,
+    });
+
+    // 直接從資料庫獲取用戶及其角色
+    const userWithRoles = await prisma.user.findUnique({
+      where: { id: user.id },
+      include: { userRoles: true },
+    });
+
+    if (!userWithRoles) {
+      return errorResponse(res, 404, "用戶不存在");
+    }
+
+    const userRoles = userWithRoles.userRoles || [];
+
+    // 檢查流程實例是否存在
     const instance = await prisma.flowInstance.findUnique({
       where: { id },
+      include: {
+        fileNodes: true,
+        documents: true,
+      },
     });
 
     if (!instance) {
       return errorResponse(res, 404, "流程實例不存在");
     }
 
-    // 只有草稿和失敗狀態可以刪除
-    if (!["draft", "failed"].includes(instance.status)) {
-      return errorResponse(res, 400, "只有草稿和失敗狀態的流程實例可以刪除");
+    // 檢查用戶是否有權限刪除
+    if (instance.createdBy !== user.id) {
+      // 檢查用戶是否為管理員
+      const isAdmin = userRoles.some(
+        (role) =>
+          role.name.toUpperCase() === "ADMIN" ||
+          role.name.toUpperCase() === "SUPERADMIN"
+      );
+
+      // 添加日誌輸出，用於調試
+      console.log("刪除流程實例請求:", {
+        instanceId: id,
+        force,
+        userRoles: userRoles.map((r) => r.name),
+        isAdmin,
+        instanceStatus: instance.status,
+      });
+
+      const isForceDelete = (force === "true" || force === true) && isAdmin;
+      console.log("強制刪除檢查:", {
+        force,
+        forceType: typeof force,
+        isAdmin,
+        isForceDelete,
+        condition1: force === "true",
+        condition2: force === true,
+      });
+
+      // 如果不是管理員強制刪除，則只允許刪除草稿和失敗狀態的實例
+      if (!isForceDelete && !["draft", "failed"].includes(instance.status)) {
+        return errorResponse(res, 400, "只有草稿和失敗狀態的流程實例可以刪除");
+      }
     }
 
-    await prisma.flowInstance.delete({
-      where: { id },
+    // 使用事務確保所有相關記錄都被刪除
+    await prisma.$transaction(async (tx) => {
+      // 1. 先刪除相關的 FileNode 記錄
+      if (instance.fileNodes && instance.fileNodes.length > 0) {
+        await tx.fileNode.deleteMany({
+          where: { flowInstanceId: id },
+        });
+      }
+
+      // 2. 刪除相關的 FlowDocument 記錄
+      if (instance.documents && instance.documents.length > 0) {
+        await tx.flowDocument.deleteMany({
+          where: { instanceId: id },
+        });
+      }
+
+      // 3. 最後刪除流程實例本身
+      await tx.flowInstance.delete({
+        where: { id },
+      });
     });
 
-    successResponse(res, 200, { message: "流程實例已刪除" });
+    return successResponse(res, 200, { message: "流程實例刪除成功" });
   } catch (error) {
-    handlePrismaError(error, res);
+    console.error("刪除流程實例錯誤:", error);
+    return errorResponse(res, 500, "刪除流程實例失敗");
   }
 };
 

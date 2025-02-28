@@ -13,13 +13,25 @@ const getAllDocuments = async (req, res) => {
   try {
     const documents = await prisma.flowDocument.findMany({
       include: {
-        project: true,
-        instance: true,
+        project: {
+          select: {
+            id: true,
+            name: true,
+            description: true,
+            projectNumber: true,
+          },
+        },
+        instance: {
+          select: {
+            id: true,
+          },
+        },
         creator: {
           select: {
             id: true,
             username: true,
             email: true,
+            avatar: true,
           },
         },
       },

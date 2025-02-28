@@ -55,6 +55,7 @@ app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocs));
 // 導入路由
 const authRoutes = require("./routes/authRoutes");
 const userRoutes = require("./routes/userRoutes");
+const rbacRoutes = require("./routes/rbacRoutes");
 const projectRoutes = require("./routes/projectRoutes");
 const flowNodeDefinitionRoutes = require("./routes/flowNodeDefinitionRoutes");
 const flowTemplateRoutes = require("./routes/flowTemplateRoutes");
@@ -65,6 +66,7 @@ const externalApiRoutes = require("./routes/externalApiRoutes");
 // 註冊路由
 app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
+app.use("/api/rbac", rbacRoutes);
 app.use("/api/projects", projectRoutes);
 app.use("/api/flow-node-definitions", flowNodeDefinitionRoutes);
 app.use("/api/flow-templates", flowTemplateRoutes);
