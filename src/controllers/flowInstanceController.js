@@ -94,6 +94,7 @@ const getInstanceById = async (req, res) => {
         updater: {
           select: {
             username: true,
+            avatar: true,
           },
         },
         documents: true,

@@ -1,6 +1,6 @@
-const { PrismaClient } = require('@prisma/client');
+const { PrismaClient } = require("@prisma/client");
 const prisma = new PrismaClient();
-const { errorResponse, successResponse } = require('../utils/jsonResponse');
+const { errorResponse, successResponse } = require("../utils/jsonResponse");
 
 // 獲取所有工作流程模板
 exports.getAllTemplates = async (req, res) => {
@@ -10,20 +10,22 @@ exports.getAllTemplates = async (req, res) => {
         creator: {
           select: {
             id: true,
-            username: true
-          }
+            username: true,
+            avatar: true,
+          },
         },
         updater: {
           select: {
             id: true,
-            username: true
-          }
-        }
-      }
+            username: true,
+            avatar: true,
+          },
+        },
+      },
     });
     successResponse(res, 200, templates);
   } catch (error) {
-    errorResponse(res, 500, '獲取工作流程模板失敗');
+    errorResponse(res, 500, "獲取工作流程模板失敗");
   }
 };
 
@@ -37,25 +39,27 @@ exports.getTemplateById = async (req, res) => {
         creator: {
           select: {
             id: true,
-            username: true
-          }
+            username: true,
+            avatar: true,
+          },
         },
         updater: {
           select: {
             id: true,
-            username: true
-          }
-        }
-      }
+            username: true,
+            avatar: true,
+          },
+        },
+      },
     });
-    
+
     if (!template) {
-      return errorResponse(res, 404, '找不到工作流程模板');
+      return errorResponse(res, 404, "找不到工作流程模板");
     }
-    
+
     successResponse(res, 200, template);
   } catch (error) {
-    errorResponse(res, 500, '獲取工作流程模板失敗');
+    errorResponse(res, 500, "獲取工作流程模板失敗");
   }
 };
 
@@ -66,12 +70,12 @@ exports.createTemplate = async (req, res) => {
       name,
       type,
       version,
-      status = 'draft',
+      status = "draft",
       nodes = [],
       edges = [],
       metadata,
       createdBy,
-      updatedBy
+      updatedBy,
     } = req.body;
 
     const template = await prisma.flowTemplate.create({
@@ -84,27 +88,29 @@ exports.createTemplate = async (req, res) => {
         edges,
         metadata: metadata || null,
         createdBy,
-        updatedBy
+        updatedBy,
       },
       include: {
         creator: {
           select: {
             id: true,
-            username: true
-          }
+            username: true,
+            avatar: true,
+          },
         },
         updater: {
           select: {
             id: true,
-            username: true
-          }
-        }
-      }
+            username: true,
+            avatar: true,
+          },
+        },
+      },
     });
 
     successResponse(res, 201, template);
   } catch (error) {
-    errorResponse(res, 500, '創建工作流程模板失敗');
+    errorResponse(res, 500, "創建工作流程模板失敗");
   }
 };
 
@@ -112,16 +118,8 @@ exports.createTemplate = async (req, res) => {
 exports.updateTemplate = async (req, res) => {
   try {
     const { id } = req.params;
-    const {
-      name,
-      type,
-      version,
-      status,
-      nodes,
-      edges,
-      metadata,
-      updatedBy
-    } = req.body;
+    const { name, type, version, status, nodes, edges, metadata, updatedBy } =
+      req.body;
 
     const template = await prisma.flowTemplate.update({
       where: { id },
@@ -133,27 +131,29 @@ exports.updateTemplate = async (req, res) => {
         ...(nodes && { nodes }),
         ...(edges && { edges }),
         ...(metadata && { metadata }),
-        updatedBy
+        updatedBy,
       },
       include: {
         creator: {
           select: {
             id: true,
-            username: true
-          }
+            username: true,
+            avatar: true,
+          },
         },
         updater: {
           select: {
             id: true,
-            username: true
-          }
-        }
-      }
+            username: true,
+            avatar: true,
+          },
+        },
+      },
     });
 
-    res.json(template);
+    successResponse(res, 200, template);
   } catch (error) {
-    errorResponse(res, 500, '更新工作流程模板失敗');
+    errorResponse(res, 500, "更新工作流程模板失敗");
   }
 };
 
@@ -162,12 +162,12 @@ exports.deleteTemplate = async (req, res) => {
   try {
     const { id } = req.params;
     await prisma.flowTemplate.delete({
-      where: { id }
+      where: { id },
     });
-    
-    res.status(204).send();
+
+    successResponse(res, 204, "刪除工作流程模板成功");
   } catch (error) {
-    errorResponse(res, 500, '刪除工作流程模板失敗');
+    errorResponse(res, 500, "刪除工作流程模板失敗");
   }
 };
 
@@ -179,11 +179,11 @@ exports.cloneTemplate = async (req, res) => {
 
     // 獲取原始模板
     const sourceTemplate = await prisma.flowTemplate.findUnique({
-      where: { id }
+      where: { id },
     });
 
     if (!sourceTemplate) {
-      return errorResponse(res, 404, '找不到工作流程模板');
+      return errorResponse(res, 404, "找不到工作流程模板");
     }
 
     // 創建新的模板
@@ -191,33 +191,35 @@ exports.cloneTemplate = async (req, res) => {
       data: {
         name: `${sourceTemplate.name} (複製)`,
         type: sourceTemplate.type,
-        version: '1.0.0', // 重置版本號
-        status: 'draft', // 設置為草稿狀態
+        version: "1.0.0", // 重置版本號
+        status: "draft", // 設置為草稿狀態
         nodes: sourceTemplate.nodes,
         edges: sourceTemplate.edges,
         metadata: sourceTemplate.metadata,
         createdBy,
-        updatedBy
+        updatedBy,
       },
       include: {
         creator: {
           select: {
             id: true,
-            username: true
-          }
+            username: true,
+            avatar: true,
+          },
         },
         updater: {
           select: {
             id: true,
-            username: true
-          }
-        }
-      }
+            username: true,
+            avatar: true,
+          },
+        },
+      },
     });
 
-    res.status(201).json(newTemplate);
+    successResponse(res, 201, newTemplate);
   } catch (error) {
-    errorResponse(res, 500, '複製工作流程模板失敗');
+    errorResponse(res, 500, "複製工作流程模板失敗");
   }
 };
 
@@ -231,27 +233,29 @@ exports.updateTemplateStatus = async (req, res) => {
       where: { id },
       data: {
         status,
-        updatedBy
+        updatedBy,
       },
       include: {
         creator: {
           select: {
             id: true,
-            username: true
-          }
+            username: true,
+            avatar: true,
+          },
         },
         updater: {
           select: {
             id: true,
-            username: true
-          }
-        }
-      }
+            username: true,
+            avatar: true,
+          },
+        },
+      },
     });
 
-    res.json(template);
+    successResponse(res, 200, template);
   } catch (error) {
-    errorResponse(res, 500, '更新工作流程模板狀態失敗');
+    errorResponse(res, 500, "更新工作流程模板狀態失敗");
   }
 };
 
@@ -262,22 +266,22 @@ exports.publishTemplate = async (req, res) => {
 
     // 檢查模板是否存在
     const template = await prisma.flowTemplate.findUnique({
-      where: { id }
+      where: { id },
     });
 
     if (!template) {
-      return errorResponse(res, 404, '找不到工作流程模板');
+      return errorResponse(res, 404, "找不到工作流程模板");
     }
 
     // 更新模板狀態為發布
     await prisma.flowTemplate.update({
       where: { id },
       data: {
-        status: 'published'
-      }
+        status: "published",
+      },
     });
 
-    successResponse(res, 200, { message: '工作流程模板發布成功' });
+    successResponse(res, 200, { message: "工作流程模板發布成功" });
   } catch (error) {
     errorResponse(res, 500, "發布工作流程模板失敗");
   }
