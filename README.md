@@ -3,11 +3,13 @@
 這是一個基於 FastAPI 的統計分析工作流程系統後端專案。
 
 ## 專案說明
+
 SFDA IYM（良率分析平台）後端服務，使用 Node.js + Express + Prisma 開發，提供 RESTful API 服務。
 
 ## 已完成功能
 
 1. 檔案管理
+
    - [x] 檔案上傳
      - 支援拖拉上傳
      - 自動檔案命名
@@ -25,6 +27,7 @@ SFDA IYM（良率分析平台）後端服務，使用 Node.js + Express + Prisma
    - [x] 自動清理臨時檔案
 
 2. API 功能
+
    - [x] RESTful API 設計
    - [x] 錯誤處理機制
    - [x] 請求驗證
@@ -51,14 +54,17 @@ SFDA IYM（良率分析平台）後端服務，使用 Node.js + Express + Prisma
 ### 角色類型
 
 1. SUPER_ADMIN
+
    - 描述：超級管理員，具有最高權限
    - 權限：系統配置、用戶管理、角色管理、權限分配等所有權限
 
 2. ADMIN
+
    - 描述：管理員，具有管理權限
    - 權限：用戶管理、角色分配等管理權限
 
 3. POWERUSER
+
    - 描述：進階用戶，具有大部分操作權限
    - 權限：除了系統管理外的大部分操作權限
 
@@ -76,27 +82,30 @@ SFDA IYM（良率分析平台）後端服務，使用 Node.js + Express + Prisma
 ### 預設用戶
 
 #### 管理員帳號
-| 用戶名 | 電子郵件 | 密碼 | 角色 |
-|--------|----------|------|------|
+
+| 用戶名     | 電子郵件               | 密碼   | 角色  |
+| ---------- | ---------------------- | ------ | ----- |
 | john_hsiao | john_hsiao@example.com | 888888 | ADMIN |
 
 #### 測試用戶
+
 所有測試用戶的預設密碼：`User123456`
 
-| 用戶名 | 電子郵件 | 角色 |
-|--------|----------|------|
-| user1  | user1@example.com | 隨機分配（POWERUSER/READER）|
-| user2  | user2@example.com | 隨機分配（POWERUSER/READER）|
-| user3  | user3@example.com | 隨機分配（POWERUSER/READER）|
-| user4  | user4@example.com | 隨機分配（POWERUSER/READER）|
-| user5  | user5@example.com | 隨機分配（POWERUSER/READER）|
-| user6  | user6@example.com | 隨機分配（POWERUSER/READER）|
-| user7  | user7@example.com | 隨機分配（POWERUSER/READER）|
-| user8  | user8@example.com | 隨機分配（POWERUSER/READER）|
-| user9  | user9@example.com | 隨機分配（POWERUSER/READER）|
-| user10 | user10@example.com | 隨機分配（POWERUSER/READER）|
+| 用戶名 | 電子郵件           | 角色                         |
+| ------ | ------------------ | ---------------------------- |
+| user1  | user1@example.com  | 隨機分配（POWERUSER/READER） |
+| user2  | user2@example.com  | 隨機分配（POWERUSER/READER） |
+| user3  | user3@example.com  | 隨機分配（POWERUSER/READER） |
+| user4  | user4@example.com  | 隨機分配（POWERUSER/READER） |
+| user5  | user5@example.com  | 隨機分配（POWERUSER/READER） |
+| user6  | user6@example.com  | 隨機分配（POWERUSER/READER） |
+| user7  | user7@example.com  | 隨機分配（POWERUSER/READER） |
+| user8  | user8@example.com  | 隨機分配（POWERUSER/READER） |
+| user9  | user9@example.com  | 隨機分配（POWERUSER/READER） |
+| user10 | user10@example.com | 隨機分配（POWERUSER/READER） |
 
 角色分配規則：
+
 - POWERUSER：30% 機率
 - READER：70% 機率
 
@@ -131,6 +140,7 @@ backend/
 ## 主要功能
 
 ### 1. 用戶認證系統
+
 - JWT 身份驗證
 - 角色權限控制（RBAC）
 - 密碼加密存儲
@@ -138,6 +148,7 @@ backend/
 - 用戶資料管理
 
 ### 2. 檔案管理系統
+
 - 多格式文件支持
 - 自動文件驗證
 - 安全存儲機制
@@ -145,6 +156,7 @@ backend/
 - 自動清理機制
 
 ### 3. RBAC 權限系統
+
 - 角色管理
 - 權限分配
 - 訪問控制
@@ -152,6 +164,7 @@ backend/
 - 權限繼承
 
 ### 4. API 安全機制
+
 - 請求驗證
 - 速率限制
 - CORS 配置
@@ -161,17 +174,23 @@ backend/
 ## 開發指南
 
 ### 開發環境要求
+
 - Node.js >= 16.0.0
 - npm >= 7.0.0
 - PostgreSQL >= 14.0
 
 ### 安裝與運行
+
 ```bash
 # 安裝依賴
 npm install
 
 # 初始化數據庫
 npx prisma migrate dev
+
+
+# 如果你只想創建新表格而不修改現有表格，可以在遷移時使用 --create-only 選項：
+npx prisma migrate dev --create-only
 
 # 開發環境運行
 npm run dev
@@ -190,6 +209,7 @@ npm test
 ## 更新日誌
 
 ### v1.3.1 (2025-02-18)
+
 - 優化檔案處理系統
   - 改進頭像上傳功能
   - 加強文件驗證機制
@@ -204,24 +224,28 @@ npm test
   - 加強快取處理
 
 ### v1.3.0 (2025-02-15)
+
 - 新增完整的 RBAC 權限管理
 - 優化資料庫結構
 - 改進 API 響應機制
 - 加強安全性配置
 
 ### v1.2.0 (2025-02-11)
+
 - 新增文件管理功能
 - 優化認證機制
 - 改進錯誤處理
 - 新增日誌系統
 
 ### v1.1.0 (2025-02-9)
+
 - 新增用戶管理功能
 - 完善 API 文檔
 - 優化性能
 - 改進開發體驗
 
 ### v1.0.0 (2025-02-7)
+
 - 初始版本發布
 - 基礎功能實現
 - 核心架構搭建
@@ -243,11 +267,13 @@ npm run test:coverage
 ## 部署
 
 1. 建構專案
+
 ```bash
 npm run build
 ```
 
 2. 設置環境變數
+
 ```bash
 NODE_ENV=production
 PORT=3000
@@ -255,6 +281,7 @@ JWT_SECRET=your-secret-key
 ```
 
 3. 啟動服務
+
 ```bash
 npm start
 ```
@@ -270,6 +297,7 @@ npm start
 本專案為私有軟體，未經授權不得使用、複製或分發。
 
 ## 最新更新
+
 - 優化認證系統
 - 改進登出機制
 - 移除不必要的認證要求
@@ -277,6 +305,7 @@ npm start
 - 改進用戶會話管理
 
 ## 開發規範
+
 - 使用 ESLint 進行代碼檢查
 - 遵循 RESTful API 設計規範
 - 使用 async/await 處理異步
@@ -284,6 +313,7 @@ npm start
 - 完整的日誌記錄
 
 ## 環境變數
+
 ```env
 # 應用配置
 PORT=3001
@@ -303,6 +333,7 @@ MAX_FILE_SIZE=5242880
 ```
 
 ## 貢獻指南
+
 1. Fork 本專案
 2. 創建特性分支
 3. 提交變更
@@ -310,4 +341,5 @@ MAX_FILE_SIZE=5242880
 5. 創建 Pull Request
 
 ## 授權
-本專案採用 MIT 授權條款 
+
+本專案採用 MIT 授權條款
