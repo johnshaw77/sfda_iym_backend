@@ -202,9 +202,16 @@ const updateInstance = async (req, res) => {
       return errorResponse(res, 404, "流程實例不存在");
     }
 
+    // 檢查是否有 _isDataUpdate 查詢參數
+    const isDataUpdateParam = req.query._isDataUpdate === "true";
+
     // 如果是更新節點數據或狀態，則允許在任何狀態下更新
     const isDataUpdate =
-      nodeData !== undefined || nodeStates !== undefined || logs !== undefined;
+      isDataUpdateParam || // 如果有 _isDataUpdate 查詢參數，則視為數據更新
+      nodeData !== undefined ||
+      nodeStates !== undefined ||
+      logs !== undefined ||
+      context !== undefined; // 上下文更新也視為數據更新
 
     // 只有草稿狀態可以更新結構（節點和邊）
     if (!isDataUpdate && instance.status !== "draft") {
@@ -579,6 +586,14 @@ const executeNode = asyncHandler(async (req, res, next) => {
     return errorResponse(res, 400, "輸入數據不能為空");
   }
 
+  // 檢查是否有 _isDataUpdate 標記，如果有，則將請求視為數據更新而不是結構更新
+  const isDataUpdate = input._isDataUpdate === true;
+
+  // 移除 _isDataUpdate 標記，避免它被保存到數據庫中
+  if (input._isDataUpdate !== undefined) {
+    delete input._isDataUpdate;
+  }
+
   try {
     // 使用事務確保數據一致性
     const result = await prisma.$transaction(async (prisma) => {
@@ -598,6 +613,21 @@ const executeNode = asyncHandler(async (req, res, next) => {
 
       if (!flowInstance) {
         throw new Error(`找不到流程實例 ${instanceId}`);
+      }
+
+      // 如果有 isDataUpdate 標記，則將請求視為數據更新而不是結構更新
+      // 這樣即使流程實例狀態不是 draft，也可以執行節點
+      if (!isDataUpdate && flowInstance.status !== "draft") {
+        // 檢查是否是數據更新（nodeData, nodeStates, logs）
+        // 如果不是，則拒絕請求
+        const isNodeDataUpdate =
+          input.nodeData !== undefined ||
+          input.nodeStates !== undefined ||
+          input.logs !== undefined;
+
+        if (!isNodeDataUpdate) {
+          throw new Error("只有草稿狀態的流程實例可以更新結構");
+        }
       }
 
       // 獲取節點數據
