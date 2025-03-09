@@ -18,6 +18,19 @@ app.use(
   helmet({
     crossOriginResourcePolicy: { policy: "cross-origin" },
     crossOriginEmbedderPolicy: false,
+    // 添加 CSP 設定
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        // 允許在 iframe 中嵌入您的內容
+        frameAncestors: ["'self'", "*"], // 或者替換 '*' 為特定的域名
+        // 其他可能需要的設定
+        scriptSrc: ["'self'", "'unsafe-inline'"],
+        styleSrc: ["'self'", "'unsafe-inline'"],
+        imgSrc: ["'self'", "data:"],
+        connectSrc: ["'self'"],
+      },
+    },
   })
 );
 app.use(cors());

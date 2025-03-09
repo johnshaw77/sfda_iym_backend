@@ -35,7 +35,7 @@ const storage = multer.diskStorage({
 const uploadMulter = multer({
   storage: storage,
   limits: {
-    fileSize: 10 * 1024 * 1024, // 限制 10MB
+    fileSize: 100 * 1024 * 1024, // 限制 100MB
   },
   fileFilter: (req, file, cb) => {
     // 允許的檔案類型
